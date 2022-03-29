@@ -1,0 +1,21 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/plastic crinkle.wav-3899c100f412c1de5131be33ee7b78e0.sample"
+
+[deps]
+
+source_file="res://plastic crinkle.wav"
+dest_files=[ "res://.import/plastic crinkle.wav-3899c100f412c1de5131be33ee7b78e0.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=true
+edit/loop=false
+compress/mode=0

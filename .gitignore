@@ -1,0 +1,12 @@
+.import/
+.builds/
+.trash/
+.ignore/
+test/
+temp/
+sounds/ignore
+bgm/ignore
+*.flac
+*.7z
+*.zip
+wfxr_output/

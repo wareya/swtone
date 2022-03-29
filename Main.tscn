@@ -1,0 +1,295 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://Main.gd" type="Script" id=1]
+
+[sub_resource type="StyleBoxFlat" id=2]
+bg_color = Color( 0.145098, 0.160784, 0.207843, 1 )
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color( 0.027451, 0.0352941, 0.0509804, 1 )
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id=1]
+bg_color = Color( 0.243137, 0.278431, 0.329412, 1 )
+border_width_left = 7
+border_width_top = 7
+border_width_right = 7
+border_width_bottom = 7
+border_color = Color( 0.188235, 0.235294, 0.298039, 1 )
+border_blend = true
+
+[node name="Control" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ColorRect" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color( 0.278431, 0.337255, 0.4, 1 )
+
+[node name="Label" type="Label" parent="."]
+margin_left = 8.0
+margin_top = 6.0
+margin_right = 328.0
+margin_bottom = 598.0
+text = "- yes, this is slow. gdscript is slow. be patient. use a low time limit until you have the kind of sound you want. (note: will lock up while generating long sounds. normal.)
+
+- oversampling reduces distortion. turning it up from 1 can ruin some sounds because they depend on distortion to sound the way they do.
+
+- pcm is noise by default, change \"pcm source\" away from 0 to use a sample. the highest \"pcm source\" value is reserved for custom samples (drag and drop)
+
+- drag and drop a compatible audio file (16-bit, mono or stereo) and pcm source 5 will be that audio file
+
+- set freq to 22050 and pcm rate to 2.0 to play sounds back at original frequency
+
+- press \"save output\" button to save to a file. on desktop this writes directly to:
+wfxr_output/wfxr_timestamp.wav
+and on html it opens a file save dialogue
+
+TODO:
+
+- high/lowpass / compressor / ringmod filters (with modulation)
+- per-oscillator semitone offset
+- more built-in pcm samples
+- random/hybrid buttons (with categories) like sfxr
+- way to save/load json
+- freq step \"loop\" mode (loop after N steps)"
+autowrap = true
+
+[node name="Player" type="AudioStreamPlayer" parent="."]
+
+[node name="Panel" type="Panel" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -227.0
+margin_bottom = -48.0
+custom_styles/panel = SubResource( 2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ScrollerA" type="ScrollContainer" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -215.0
+margin_top = 14.0
+margin_right = -12.0
+margin_bottom = -60.0
+custom_styles/bg = SubResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Controls" type="VBoxContainer" parent="ScrollerA"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 196.0
+margin_bottom = 28.0
+size_flags_horizontal = 3
+custom_constants/separation = 3
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="ScrollerA/Controls"]
+margin_right = 189.0
+margin_bottom = 14.0
+text = "EMITTERS"
+align = 1
+
+[node name="HSeparator" type="HSeparator" parent="ScrollerA/Controls"]
+margin_top = 17.0
+margin_right = 189.0
+margin_bottom = 21.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Panel2" type="Panel" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -462.0
+margin_right = -235.0
+margin_bottom = -48.0
+custom_styles/panel = SubResource( 2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ScrollerB" type="ScrollContainer" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -451.0
+margin_top = 14.0
+margin_right = -246.0
+margin_bottom = -60.0
+custom_styles/bg = SubResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Controls" type="VBoxContainer" parent="ScrollerB"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 198.0
+margin_bottom = 28.0
+size_flags_horizontal = 3
+custom_constants/separation = 3
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="ScrollerB/Controls"]
+margin_right = 191.0
+margin_bottom = 14.0
+text = "MODULATION"
+align = 1
+
+[node name="HSeparator" type="HSeparator" parent="ScrollerB/Controls"]
+margin_top = 17.0
+margin_right = 191.0
+margin_bottom = 21.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Panel3" type="Panel" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -695.0
+margin_right = -468.0
+margin_bottom = -48.0
+custom_styles/panel = SubResource( 2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ScrollerC" type="ScrollContainer" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -684.0
+margin_top = 14.0
+margin_right = -479.0
+margin_bottom = -60.0
+custom_styles/bg = SubResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Controls" type="VBoxContainer" parent="ScrollerC"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 198.0
+margin_bottom = 28.0
+size_flags_horizontal = 3
+custom_constants/separation = 3
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="ScrollerC/Controls"]
+margin_right = 191.0
+margin_bottom = 14.0
+text = "ENVELOPE"
+align = 1
+
+[node name="HSeparator" type="HSeparator" parent="ScrollerC/Controls"]
+margin_top = 17.0
+margin_right = 191.0
+margin_bottom = 21.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Panel4" type="Panel" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -930.0
+margin_right = -703.0
+margin_bottom = -48.0
+custom_styles/panel = SubResource( 2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ScrollerD" type="ScrollContainer" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -919.0
+margin_top = 14.0
+margin_right = -714.0
+margin_bottom = -60.0
+custom_styles/bg = SubResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Controls" type="VBoxContainer" parent="ScrollerD"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 198.0
+margin_bottom = 28.0
+size_flags_horizontal = 3
+custom_constants/separation = 3
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="ScrollerD/Controls"]
+margin_right = 191.0
+margin_bottom = 14.0
+text = "FILTERS"
+align = 1
+
+[node name="HSeparator" type="HSeparator" parent="ScrollerD/Controls"]
+margin_top = 17.0
+margin_right = 191.0
+margin_bottom = 21.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Buttons" type="HSplitContainer" parent="."]
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = -48.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Regen" type="Button" parent="Buttons"]
+margin_right = 634.0
+margin_bottom = 48.0
+size_flags_horizontal = 3
+text = "Regenerate & Play"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Save" type="Button" parent="Buttons"]
+margin_left = 646.0
+margin_right = 1280.0
+margin_bottom = 48.0
+size_flags_horizontal = 3
+text = "Save"
+__meta__ = {
+"_edit_use_anchors_": false
+}

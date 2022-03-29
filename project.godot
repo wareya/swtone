@@ -1,0 +1,58 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=4
+
+_global_script_classes=[ {
+"base": "Reference",
+"class": "AudioLoader",
+"language": "GDScript",
+"path": "res://GDScriptAudioImport.gd"
+} ]
+_global_script_class_icons={
+"AudioLoader": ""
+}
+
+[application]
+
+config/name="swtone"
+run/main_scene="res://Main.tscn"
+config/icon="res://icon.png"
+
+[audio]
+
+channel_disable_threshold_db=-90.0
+
+[display]
+
+window/size/width=1280
+window/size/height=720
+
+[importer_defaults]
+
+wav={
+"compress/mode": 0,
+"edit/loop": false,
+"edit/normalize": true,
+"edit/trim": false,
+"force/8_bit": false,
+"force/max_rate": false,
+"force/max_rate_hz": 44100,
+"force/mono": false
+}
+
+[physics]
+
+common/enable_pause_aware_picking=true
+
+[rendering]
+
+quality/driver/driver_name="GLES2"
+vram_compression/import_etc=true
+vram_compression/import_etc2=false
+environment/default_environment="res://default_env.tres"
