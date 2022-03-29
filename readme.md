@@ -1,5 +1,7 @@
 # swtone
 
+![image](https://user-images.githubusercontent.com/585488/160532286-7f531568-b4b7-4e22-a387-ac0323ca31c6.png)
+
 incomplete sfxr-inspired sound effects tool
 
 own code licensed under apache 2.0
