@@ -10,3 +10,4 @@ bgm/ignore
 *.7z
 *.zip
 wfxr_output/
+.export/
