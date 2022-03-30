@@ -539,8 +539,8 @@ class Generator extends Reference:
     var limiter_pre_gain = 1.0
     var limiter_lookahead = 0.001
     var limiter_attack = 0.001
-    var limiter_sustain = 0.03
-    var limiter_release = 0.01
+    var limiter_sustain = 0.04
+    var limiter_release = 0.04
     var limiter_threshold = 1.0
     var limiter = Limiter.new(sample_rate, limiter_pre_gain, limiter_lookahead, limiter_attack, limiter_sustain, limiter_release, limiter_threshold)
     
