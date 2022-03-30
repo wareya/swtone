@@ -38,13 +38,222 @@ class Delay extends Filter:
             c2 = c2 % wet.size()
             _wet.x = wet[c2].x
         return dry * dry_amount + _wet * wet_amount
+
+class Lowpass extends Filter:
+    var cutoff = 0.0
+    var decay_constant = 0.0
+    var memory = Vector2()
+    func _init(sample_rate, cutoff : float).(sample_rate):
+        update_decay_constant(cutoff)
+    func update_decay_constant(cutoff : float):
+        self.cutoff = cutoff
+        var y = 1 - cos(cutoff / (sample_rate/2.0) * PI)
+        decay_constant = -y + sqrt(y*y + 2*y)
+    func push_sample(x):
+        memory = memory.linear_interpolate(x, decay_constant)
+    func pop_sample():
+        return memory
+
+class Highpass extends Filter:
+    var cutoff = 0.0
+    var decay_constant = 0.0
+    var memory = Vector2()
+    var memory2 = Vector2()
+    func _init(sample_rate, cutoff : float).(sample_rate):
+        update_decay_constant(cutoff)
+    func update_decay_constant(cutoff : float):
+        self.cutoff = cutoff
+        var y = 1 - cos(cutoff / (sample_rate/2.0) * PI)
+        decay_constant = -y + sqrt(y*y + 2*y)
+    func push_sample(x):
+        memory = memory.linear_interpolate(x, decay_constant)
+        memory2 = x
+    func pop_sample():
+        return memory2 - memory
+
+class Ringmod extends Filter:
+    var frequency = 0.0
+    var amount = 1.0
+    var cursor = 0.0
+    var phase = 0.0
+    var memory = Vector2()
+    func _init(sample_rate, frequency : float, phase : float, amount : float).(sample_rate):
+        self.frequency = frequency
+        self.amount = amount
+        self.phase = phase
+        cursor = 0.0
+    func push_sample(x):
+        memory = x
+    func pop_sample():
+        var r = memory * sin(cursor*PI*2 + phase*PI*2.0)
+        cursor += frequency*2.0/sample_rate
+        return memory.linear_interpolate(r, amount)
+
+class Flanger extends Filter:
+    var wet = []
+    var wet_amount = 1.0
+    var dry_amount = 1.0
+    var dry = Vector2.ZERO
+    var cursor = 0
+    var min_depth = 0
+    var max_depth = 0
+    var rate = 2.0
+    var feedback = 0.5
+    #var stereo_offset = -0.01
+    func _init(sample_rate, min_depth, max_depth, rate).(sample_rate):
+        self.min_depth = int(min_depth * sample_rate)
+        self.max_depth = int(max_depth * sample_rate)
+        self.rate = float(rate)
+        wet = []
+        for i in range(max(min_depth, max_depth)*sample_rate):
+            wet.push_back(Vector2.ZERO)
+        if wet.size() == 0:
+            wet.push_back(Vector2.ZERO)
+    func push_sample(x):
+        #wet[cursor] *= decay
+        #wet[cursor] += x
+        wet[cursor % wet.size()] = x
+        dry = x
+        cursor += 1
+        
+    func _tri(x):
+        return abs((fmod((x*2.0)+1.0,2.0)-1))
     
+    func pop_sample():
+        var lfo_amount = _tri(cursor/sample_rate * ((1.0/rate) if rate > 0.0 else 0.0))
+        var samples_into_past = lerp(min_depth, max_depth, lfo_amount)
+        samples_into_past = int(min(samples_into_past, wet.size()-1))
+        #if randi() % 999 == 0:
+        #    print("%s/%s" % [samples_into_past, wet.size()])
+        var _wet = wet[(cursor - 1 - samples_into_past + wet.size()*2) % wet.size()]
+        var out = dry * dry_amount + _wet * wet_amount
+        wet[(cursor - 1) % wet.size()] *= 1.0 - feedback
+        wet[(cursor - 1) % wet.size()] += out * feedback
+        return out
+        #if stereo_offset > 0.0:
+        #    var c2 = int(cursor+stereo_offset*sample_rate)
+        #    c2 = c2 % wet.size()
+        #    _wet.y = wet[c2].y
+        #elif stereo_offset < 0.0:
+        #    var c2 = int(cursor-stereo_offset*sample_rate)
+        #    c2 = c2 % wet.size()
+        #    _wet.x = wet[c2].x
+
+class Limiter extends Filter:
+    var pre_gain = 1.0
+    var lookahead = 0.001
+    var attack = 0.001
+    var sustain = 0.01
+    var release = 0.001
+    var threshold = 1.0
+    
+    var amplitude = 1.0
+    var hit_time = 0.0
+    var hit_loudness = 1.0
+    var time = 0.0
+    
+    var buffer = []
+    var buffer_max = []
+    var buffer_max_bucket = []
+    var buffer_max_bucket_dirty = []
+    var bucket_size = 128
+    var cursor = 0
+    
+    func _init(sample_rate).(sample_rate):
+        for i in range(lookahead * sample_rate):
+            buffer.push_back(Vector2())
+        for i in range(sustain * sample_rate):
+            buffer_max.push_back(0.0)
+            if int(i) % bucket_size == 0:
+                buffer_max_bucket.push_back(0.0)
+                buffer_max_bucket_dirty.push_back(false)
+        if buffer.size() == 0:
+            buffer.push_back(Vector2())
+        if buffer_max.size() == 0:
+            buffer_max.push_back(0.0)
+            buffer_max_bucket.push_back(0.0)
+            buffer_max_bucket_dirty.push_back(false)
+        time = 0.0
+    
+    func max_buffer():
+        for i in range(buffer_max_bucket_dirty.size()):
+            if buffer_max_bucket_dirty[i]:
+                var y = 0.0
+                for j in range(i*bucket_size, min((i+1)*bucket_size, buffer_max.size())):
+                    var n = buffer_max[j]
+                    y = max(n, y)
+                buffer_max_bucket[i] = y
+                buffer_max_bucket_dirty[i] = false
+        var x = 0.0
+        for n in buffer_max_bucket:
+            x = max(n, x)
+        return x
+    
+    var former_amplitude = 1.0
+    func push_sample(x):
+        cursor += 1
+        x *= pre_gain
+        time += 1.0/sample_rate
+        
+        buffer[cursor % buffer.size()] = x
+        var loudness = max(abs(x.x), abs(x.y))
+        buffer_max[cursor % buffer_max.size()] = loudness
+        buffer_max_bucket_dirty[floor((cursor % buffer_max.size())/bucket_size)] = true
+        
+        var envelope = max_buffer()
+        if envelope >= threshold:
+            hit_loudness = envelope
+            hit_time = time
+        
+        # FIXME this is wrong now
+        var adjusted_time = (time - hit_time)
+        if adjusted_time < lookahead + sustain: # sustain
+            amplitude = threshold/hit_loudness
+        elif release > 0.0 and adjusted_time < sustain + lookahead + release: # release
+            adjusted_time -= sustain + lookahead
+            var decay_progress = clamp(adjusted_time / release, 0.0, 1.0)
+            amplitude = lerp(threshold/hit_loudness, 1.0, decay_progress)
+        else: # end of release
+            amplitude = 1.0
+        
+        handle_attack()
+    
+    # this "attack" algorithm is numerically unstable but very fast
+    # and the instability doesn't matter for the mere seconds/minutes of audio swtone produces
+    var attack_amplitude_raw = 1.0
+    var attack_amplitude = 1.0
+    var attack_buffer = []
+    var attack_cursor = 0
+    func handle_attack():
+        if attack == 0.0:
+            attack_amplitude = amplitude
+            return
+        if attack_buffer.size() == 0:
+            attack_amplitude = 0.0
+            for i in range(int(attack * sample_rate + 1)):
+                attack_buffer.push_back(amplitude)
+                attack_amplitude += amplitude
+            attack_amplitude /= attack_buffer.size()
+        
+        var old = attack_buffer[attack_cursor % attack_buffer.size()]
+        attack_buffer[attack_cursor % attack_buffer.size()] = amplitude
+        attack_cursor += 1
+        
+        attack_amplitude -= old/attack_buffer.size()
+        attack_amplitude += amplitude/attack_buffer.size()
+    
+    func pop_sample():
+        if lookahead > 0.0:
+            return buffer[(cursor + 1) % buffer.size()] * attack_amplitude
+        else:
+            return buffer[cursor % buffer.size()] * attack_amplitude
 
 class Generator extends Reference:
+    var parent : Node
     var samples = PoolVector2Array()
     var playback_cursor = 0
     var sample_rate = 44100.0
-    var freq = 440.0
+    var freq = 44.0
     var freq_offset_lfo = 0.0 # semitones
     var freq_offset_sweep = 0.0 # semitones
     var freq_offset_step = 0.0 # semitones
@@ -53,7 +262,6 @@ class Generator extends Reference:
         return pow(2, x/12.0)
     func factor_to_semitones(x):
         return log(x)/log(2)*12.0
-    
     
     var oversampling = 1.0
     
@@ -116,8 +324,9 @@ class Generator extends Reference:
     var pcm_source_custom = [Vector2()]
     var pcm_sample_loop = 1.0
     var pcm_source = 0.0
-    var pcm_volume = 0.5
+    var pcm_volume = 0.0
     var pcm_offset = 0.0
+    var pcm_cutoff = 0.0
     var pcm_rate = 16.0
     var pcm_noise_cycle = 1024
     func _pcm(cursor, exponent = 1.0):
@@ -129,17 +338,23 @@ class Generator extends Reference:
             return n
         elif int(pcm_source) <= pcm_sources.size():
             var source = pcm_sources[int(pcm_source)-1]
-            if cursor >= source.size():
+            var size = source.size()
+            if pcm_cutoff > 0.0:
+                size = min(size, int(pcm_cutoff * sample_rate))
+            if cursor >= size:
                 if pcm_sample_loop != 0.0:
-                    cursor = cursor % source.size()
+                    cursor = cursor % size
                 else:
                     return 0.0
             return source[cursor]
         elif int(pcm_source) == pcm_sources.size()+1:
             var source = pcm_source_custom
-            if cursor >= source.size():
+            var size = source.size()
+            if pcm_cutoff > 0.0:
+                size = min(size, int(pcm_cutoff * sample_rate))
+            if cursor >= size:
                 if pcm_sample_loop != 0.0:
-                    cursor = cursor % source.size()
+                    cursor = cursor % size
                 else:
                     return 0.0
             return source[cursor]
@@ -149,19 +364,43 @@ class Generator extends Reference:
     var time_limit = 5.0
     
     var sin_volume = 0.0
+    var sin_detune = 0.0
     
     var tri_volume = 0.0
     var tri_stages = 16.0
+    var tri_detune = 0.0
     
-    var square_volume = 0.0
+    var square_volume = 1.0
     var square_width = 0.5
+    var square_detune = 0.0
     
     var saw_volume = 0.0
-    var saw_exponent= 1.0
+    var saw_exponent = 1.0
+    var saw_detune = 0.0
     
     func update_filters():
-        delay.push_sample(samples[samples.size()-1])
-        samples[samples.size()-1] = delay.pop_sample()
+        if delay_wet_amount != 0.0 or delay_dry_amount != 1.0:
+            delay.push_sample(samples[samples.size()-1])
+            samples[samples.size()-1] = delay.pop_sample()
+        
+        if lowpass_frequency < 22050.0:
+            lowpass.push_sample(samples[samples.size()-1])
+            samples[samples.size()-1] = lowpass.pop_sample()
+        
+        if highpass_frequency > 20.0:
+            highpass.push_sample(samples[samples.size()-1])
+            samples[samples.size()-1] = highpass.pop_sample()
+        
+        if ringmod_frequency > 0.0 and ringmod_amount != 0.0:
+            ringmod.push_sample(samples[samples.size()-1])
+            samples[samples.size()-1] = ringmod.pop_sample()
+        
+        flanger.push_sample(samples[samples.size()-1])
+        samples[samples.size()-1] = flanger.pop_sample()
+        
+        if true:
+            limiter.push_sample(samples[samples.size()-1])
+            samples[samples.size()-1] = limiter.pop_sample()
     
     var delay_time = 0.25
     var delay_decay = 0.2
@@ -171,32 +410,58 @@ class Generator extends Reference:
     
     var delay = Delay.new(sample_rate, delay_time, delay_decay)
     
+    var lowpass_frequency = 22050.0
+    var lowpass = Lowpass.new(sample_rate, lowpass_frequency)
+    
+    var highpass_frequency = 20.0
+    var highpass = Highpass.new(sample_rate, highpass_frequency)
+    
+    var ringmod_frequency = 0.01
+    var ringmod_phase = 0.0
+    var ringmod_amount = 0.0
+    var ringmod = Ringmod.new(sample_rate, ringmod_frequency, ringmod_phase, ringmod_amount)
+    
+    
+    var limiter = Limiter.new(sample_rate)
+    
+    
+    var flanger = Flanger.new(sample_rate, 0.002, 0.005, 2.0)
+    
     func generate():
+        parent.find_node("Regen").disabled = true
         #pcm_source = make_pcm_source(preload("res://tambourine.wav"))
         #pcm_source = make_pcm_source(preload("res://paper bag.wav"))
         samples = PoolVector2Array()
         restart()
         
         var aa = oversampling
-        var break_limit = 0.1
+        var break_limit = 0.05
         var silence_count = 0
         var silence_limit = 1.0/32768.0
         
+        var start_time = OS.get_ticks_msec()
         for x in range(sample_rate*time_limit):
+            if abs(OS.get_ticks_msec() - start_time) > 10:
+                yield(parent.get_tree(), "idle_frame")
+                start_time = OS.get_ticks_msec()
             update_envelope(gen_time)
             var old_time = gen_time
             var next = Vector2.ZERO
             var current_freq = freq * semitones_to_factor(freq_offset_lfo + freq_offset_sweep + freq_offset_step)
             for i in range(aa):
-                gen_cursor += (current_freq)/sample_rate/aa
+                gen_cursor += current_freq/sample_rate/aa*2.0
                 if sin_volume != 0.0:
-                    next += Vector2.ONE * sin_volume    * _sin   (gen_cursor)
+                    var f = semitones_to_factor(sin_detune)    if sin_detune    != 0.0 else 1.0
+                    next += Vector2.ONE * sin_volume    * _sin   (gen_cursor * f)
                 if tri_volume != 0.0:
-                    next += Vector2.ONE * tri_volume    * _tri   (gen_cursor, tri_stages)
+                    var f = semitones_to_factor(tri_detune)    if tri_detune    != 0.0 else 1.0
+                    next += Vector2.ONE * tri_volume    * _tri   (gen_cursor * f, tri_stages)
                 if square_volume != 0.0:
-                    next += Vector2.ONE * square_volume * _square(gen_cursor, square_width)
+                    var f = semitones_to_factor(square_detune) if square_detune != 0.0 else 1.0
+                    next += Vector2.ONE * square_volume * _square(gen_cursor * f, square_width)
                 if saw_volume != 0.0:
-                    next += Vector2.ONE * saw_volume    * _saw   (gen_cursor, saw_exponent)
+                    var f = semitones_to_factor(saw_detune)    if saw_detune    != 0.0 else 1.0
+                    next += Vector2.ONE * saw_volume    * _saw   (gen_cursor * f, saw_exponent)
                 if pcm_volume != 0.0:
                     next += Vector2.ONE * pcm_volume    * _pcm   (gen_cursor)
             var sample = next * 0.5 / aa * envelope
@@ -215,15 +480,18 @@ class Generator extends Reference:
             if silence_count/sample_rate > break_limit:
                 break
         playback_cursor = 0
+        parent.find_node("Regen").disabled = false
         emit_signal("generation_complete")
     
     var step_time = 0.0
-    var step_semitones = 4
-    var step_semitones_stagger = -1
+    var step_semitones = 4.0
+    var step_semitones_stagger = -1.0
     var step_retrigger = 1.0
+    var step_loop = 0.0
     
     var freq_lfo_rate = 0.0
     var freq_lfo_strength = 0.0
+    var freq_lfo_shape = 0.0
     
     var freq_sweep_rate = 0.0 # semitones per second
     var freq_sweep_delta = 0.0 # semitones per second per second
@@ -248,25 +516,56 @@ class Generator extends Reference:
         elif time - attack - hold < release:
             if release > 0.0:
                 envelope = max(0, 1.0 - ((time - attack - hold)/release))
-                envelope = pow(envelope, release_exponent) * release_volume
+                if release_exponent != 1.0:
+                    envelope = pow(envelope, release_exponent)
+                envelope *= release_volume
             else:
                 envelope = 0.0
+        else:
+            envelope = 0.0
     
     func update_events(old_time):
-        var trigger_time = gen_time
-        var step_semitones = self.step_semitones
-        var step_semitones_stagger = self.step_semitones_stagger
-        if step_retrigger != 0.0 and step_time > 0.0:
-            while old_time > step_time:
-                old_time -= step_time
-                trigger_time -= step_time
-                step_semitones += step_semitones_stagger
-                step_semitones_stagger = -step_semitones_stagger
-        if step_time > 0.0 and old_time < step_time and trigger_time >= step_time:
-            freq_offset_step += step_semitones
+        if step_time > 0.0:
+            var trigger_time = gen_time
+            var step_semitones = self.step_semitones
+            var step_semitones_stagger = self.step_semitones_stagger
+            if step_retrigger != 0.0:
+                if fmod(old_time, step_time*step_loop) > fmod(trigger_time, step_time*step_loop):
+                    freq_offset_step = 0
+                while step_loop > 0.0 and trigger_time > step_time*step_loop:
+                    trigger_time -= step_time*step_loop
+                    old_time -= step_time*step_loop
+                while old_time > step_time:
+                    old_time -= step_time
+                    trigger_time -= step_time
+                    step_semitones += step_semitones_stagger
+                    step_semitones_stagger = -step_semitones_stagger
+            if old_time < step_time and trigger_time >= step_time:
+                freq_offset_step += step_semitones
         
-        var f = _tri(gen_time*freq_lfo_rate*2.0) * freq_lfo_strength
-        freq_offset_lfo = f
+        if freq_lfo_strength != 0 and freq_lfo_rate != 0:
+            var t = gen_time * freq_lfo_rate * 2.0
+            if freq_lfo_shape == 0.0:
+                freq_offset_lfo = _tri(t)
+            elif freq_lfo_shape == 1.0:
+                freq_offset_lfo = _square(t)
+            elif freq_lfo_shape == 2.0:
+                freq_offset_lfo = _square(t, 0.25)
+            elif freq_lfo_shape == 3.0:
+                freq_offset_lfo = _saw(t)
+            elif freq_lfo_shape == 4.0:
+                freq_offset_lfo = _saw(t, 2)
+            elif freq_lfo_shape == 5.0:
+                if int(pcm_source) == 0:
+                    freq_offset_lfo = _pcm(t / pcm_rate, 2)
+                else:
+                    freq_offset_lfo = _pcm(t / pcm_rate, 2)
+                    freq_offset_lfo = freq_offset_lfo.x + freq_offset_lfo.y
+                if randi() % 10000 == 0:
+                    print(freq_offset_lfo)
+            freq_offset_lfo *= freq_lfo_strength
+        else:
+            freq_offset_lfo = 0.0
         
         var sweep_offset = freq_sweep_delta * gen_time
         freq_offset_sweep += (freq_sweep_rate + sweep_offset) * 1.0/sample_rate
@@ -284,6 +583,12 @@ class Generator extends Reference:
         delay.stereo_offset = delay_stereo_offset
         delay.wet_amount = delay_wet_amount
         delay.dry_amount = delay_dry_amount
+        
+        lowpass = Lowpass.new(sample_rate, lowpass_frequency)
+        highpass = Highpass.new(sample_rate, highpass_frequency)
+        ringmod = Ringmod.new(sample_rate, ringmod_frequency, ringmod_phase, ringmod_amount)
+        flanger = Flanger.new(sample_rate, 0.002, 0.005, 2.0)
+        limiter = Limiter.new(sample_rate)
     
     func pull_sample():
         playback_cursor = max(0, playback_cursor)
@@ -295,10 +600,14 @@ class Generator extends Reference:
     
     signal generation_complete
 
-onready var control_target : Node = $ScrollerA/Controls
+onready var control_target : Node = $Scroll/Box/ScrollerA/Controls
 
 func set_label_value(label : Label, value : float):
-    if abs(value) < 10:
+    if abs(value) == 0.0:
+        label.text = "0.00"
+    elif abs(value) < 0.1:
+        label.text = "%.3f" % value
+    elif abs(value) < 10:
         label.text = "%.2f" % value
     elif abs(value) < 1000:
         label.text = "%.1f" % value
@@ -357,20 +666,25 @@ func add_controls():
     slider.step = 0.5
     add_separator()
     add_slider("square_volume", -1.0, 1.0)
+    add_slider("square_detune", -48.0, 48.0)
     add_slider("square_width", 0.0, 1.0)
     add_separator()
     add_slider("tri_volume", -1.0, 1.0)
+    add_slider("tri_detune", -48.0, 48.0)
     slider = add_slider("tri_stages", 0.0, 32.0)
     slider.step = 1
     add_separator()
     add_slider("saw_volume", -1.0, 1.0)
+    add_slider("saw_detune", -48.0, 48.0)
     slider = add_slider("saw_exponent", 0.01, 16.0)
     slider.exp_edit = true
     add_separator()
     add_slider("sin_volume", -1.0, 1.0)
+    add_slider("sin_detune", -48.0, 48.0)
     add_separator()
     add_slider("pcm_volume", -1.0, 1.0)
     add_slider("pcm_offset", 0.0, 5.0)
+    add_slider("pcm_cutoff", 0.0, 15.0)
     add_slider("pcm_rate", 0.01, 100.0).exp_edit = true
     slider = add_slider("pcm_noise_cycle", 2, pow(2, 16))
     slider.exp_edit = true
@@ -378,20 +692,22 @@ func add_controls():
     add_slider("pcm_source", 0, 5).step = 1
     add_slider("pcm_sample_loop", 0, 1).step = 1
     
-    control_target = $ScrollerB/Controls
+    control_target = $Scroll/Box/ScrollerB/Controls
     
     add_slider("step_time", 0.0, 5.0)
     add_slider("step_semitones", -48, 48)
     add_slider("step_semitones_stagger", -48, 48)
     add_slider("step_retrigger", 0, 1).step = 1
+    add_slider("step_loop", 0, 16).step = 1
     add_separator()
     add_slider("freq_lfo_rate", 0.0, 50)
     add_slider("freq_lfo_strength", -12, 12)
+    add_slider("freq_lfo_shape", 0, 5).step = 1
     add_separator()
     add_slider("freq_sweep_rate", -12*32, 12*32).step = 1
     add_slider("freq_sweep_delta", -12*32, 12*32).step = 1
     
-    control_target = $ScrollerC/Controls
+    control_target = $Scroll/Box/ScrollerC/Controls
     
     slider = add_slider("time_limit", 0.1, 50.0)
     slider.exp_edit = true
@@ -409,14 +725,22 @@ func add_controls():
     slider.exp_edit = true
     add_slider("release_volume", -1.0, 1.0)
     
-    control_target = $ScrollerD/Controls
+    control_target = $Scroll/Box/ScrollerD/Controls
     add_slider("oversampling", 1, 8.0).step = 1
     add_separator()
-    add_slider("delay_time", 0.01, 4.0)
+    add_slider("delay_time", 0.001, 4.0).step = 0.001
     add_slider("delay_decay", 0.0, 2.0)
-    add_slider("delay_stereo_offset", -1.0, 1.0)
+    add_slider("delay_stereo_offset", -1.0, 1.0).step = 0.001
     add_slider("delay_wet_amount", -1.0, 1.0)
     add_slider("delay_dry_amount", -1.0, 1.0)
+    add_separator()
+    add_slider("lowpass_frequency", 20.0, 22050.0).exp_edit = true
+    add_separator()
+    add_slider("highpass_frequency", 20.0, 22050.0).exp_edit = true
+    add_separator()
+    add_slider("ringmod_frequency", 0.01, 22050.0).exp_edit = true
+    add_slider("ringmod_phase", 0.0, 1.0)
+    add_slider("ringmod_amount", -2.0, 2.0)
 
 func _on_files_dropped(files : PoolStringArray, screen : int):
     var want = files[0]
@@ -428,7 +752,7 @@ func _on_files_dropped(files : PoolStringArray, screen : int):
         return
     generator.pcm_source_custom = generator.make_pcm_source(stream)
     generator.pcm_source = generator.pcm_sources.size()+1
-    $ScrollerA/Controls.find_node("pcm_source", true, false).value = generator.pcm_source
+    $Scroll/Box/ScrollerA/Controls.find_node("pcm_source", true, false).value = generator.pcm_source
 
 var fname
 var fname_bare
@@ -437,13 +761,15 @@ func save():
     var dir = Directory.new()
     dir.make_dir("sfx_output")
     
-    var timestamp = OS.get_unix_time()
+    var timestamp = OS.get_system_time_msecs()
     fname = "sfx_output/sfx_%s.wav" % timestamp
     fname_bare = "sfx_%s.wav" % timestamp
     var bytes = StreamPeerBuffer.new()
     for vec in generator.samples:
-        bytes.put_16(vec.x*32768.0)
-        bytes.put_16(vec.y*32768.0)
+        vec.x = clamp(vec.x, -1.0, 1.0)
+        vec.y = clamp(vec.y, -1.0, 1.0)
+        bytes.put_16(vec.x*32767.0)
+        bytes.put_16(vec.y*32767.0)
     bytes.seek(0)
     var audio = AudioStreamSample.new()
     audio.format = audio.FORMAT_16_BITS
@@ -469,8 +795,10 @@ func update_player():
     
     var bytes = StreamPeerBuffer.new()
     for vec in generator.samples:
-        bytes.put_16(vec.x*32768.0)
-        bytes.put_16(vec.y*32768.0)
+        vec.x = clamp(vec.x, -1.0, 1.0)
+        vec.y = clamp(vec.y, -1.0, 1.0)
+        bytes.put_16(vec.x*32767.0)
+        bytes.put_16(vec.y*32767.0)
     bytes.seek(0)
     var audio = AudioStreamSample.new()
     audio.format = audio.FORMAT_16_BITS
@@ -490,6 +818,7 @@ func _ready():
     get_tree().connect("files_dropped", self, "_on_files_dropped")
     
     generator = Generator.new()
+    generator.parent = self
     add_controls()
     yield(get_tree(), "idle_frame")
     yield(get_tree(), "idle_frame")

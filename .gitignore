@@ -9,5 +9,5 @@ bgm/ignore
 *.flac
 *.7z
 *.zip
-wfxr_output/
+sfx_output/
 .export/

@@ -27,16 +27,27 @@ border_blend = true
 anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource( 1 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [node name="ColorRect" type="ColorRect" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color( 0.278431, 0.337255, 0.4, 1 )
 
-[node name="Label" type="Label" parent="."]
+[node name="Player" type="AudioStreamPlayer" parent="."]
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 0.933
+margin_bottom = 0.23999
+scroll_vertical_enabled = false
+
+[node name="Box" type="Control" parent="Scroll"]
+margin_right = 1280.0
+margin_bottom = 672.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="Scroll/Box"]
 margin_left = 8.0
 margin_top = 6.0
 margin_right = 328.0
@@ -45,29 +56,25 @@ text = "- yes, this is slow. gdscript is slow. be patient. use a low time limit 
 
 - oversampling reduces distortion. turning it up from 1 can ruin some sounds because they depend on distortion to sound the way they do.
 
-- pcm is noise by default, change \"pcm source\" away from 0 to use a sample. the highest \"pcm source\" value is reserved for custom samples (drag and drop)
+- pcm is noise by default, change \"pcm source\" away from 0 to use a sample. the highest \"pcm source\" value is reserved for custom samples (drag and drop), pcm cutoff is only for samples (not for noise, use noise cycle for that).
 
 - drag and drop a compatible audio file (16-bit, mono or stereo) and pcm source 5 will be that audio file
 
-- set freq to 22050 and pcm rate to 2.0 to play sounds back at original frequency
+- set freq to 22050 and pcm rate to 1.0 to play sounds back at original frequency
 
 - press \"save output\" button to save to a file. on desktop this writes directly to:
-wfxr_output/wfxr_timestamp.wav
+sxr_output/sxr_timestamp.wav
 and on html it opens a file save dialogue
 
 TODO:
 
-- high/lowpass / compressor / ringmod filters (with modulation)
-- per-oscillator semitone offset
+- chorus(?) / waveshaper filters (with modulation)
 - more built-in pcm samples
 - random/hybrid buttons (with categories) like sfxr
-- way to save/load json
-- freq step \"loop\" mode (loop after N steps)"
+- way to save/load json"
 autowrap = true
 
-[node name="Player" type="AudioStreamPlayer" parent="."]
-
-[node name="Panel" type="Panel" parent="."]
+[node name="Panel" type="Panel" parent="Scroll/Box"]
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -78,7 +85,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="ScrollerA" type="ScrollContainer" parent="."]
+[node name="ScrollerA" type="ScrollContainer" parent="Scroll/Box"]
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -91,7 +98,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Controls" type="VBoxContainer" parent="ScrollerA"]
+[node name="Controls" type="VBoxContainer" parent="Scroll/Box/ScrollerA"]
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 196.0
@@ -102,13 +109,13 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label" type="Label" parent="ScrollerA/Controls"]
+[node name="Label" type="Label" parent="Scroll/Box/ScrollerA/Controls"]
 margin_right = 189.0
 margin_bottom = 14.0
 text = "EMITTERS"
 align = 1
 
-[node name="HSeparator" type="HSeparator" parent="ScrollerA/Controls"]
+[node name="HSeparator" type="HSeparator" parent="Scroll/Box/ScrollerA/Controls"]
 margin_top = 17.0
 margin_right = 189.0
 margin_bottom = 21.0
@@ -116,7 +123,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Panel2" type="Panel" parent="."]
+[node name="Panel2" type="Panel" parent="Scroll/Box"]
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -128,7 +135,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="ScrollerB" type="ScrollContainer" parent="."]
+[node name="ScrollerB" type="ScrollContainer" parent="Scroll/Box"]
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -141,7 +148,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Controls" type="VBoxContainer" parent="ScrollerB"]
+[node name="Controls" type="VBoxContainer" parent="Scroll/Box/ScrollerB"]
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 198.0
@@ -152,13 +159,13 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label" type="Label" parent="ScrollerB/Controls"]
+[node name="Label" type="Label" parent="Scroll/Box/ScrollerB/Controls"]
 margin_right = 191.0
 margin_bottom = 14.0
 text = "MODULATION"
 align = 1
 
-[node name="HSeparator" type="HSeparator" parent="ScrollerB/Controls"]
+[node name="HSeparator" type="HSeparator" parent="Scroll/Box/ScrollerB/Controls"]
 margin_top = 17.0
 margin_right = 191.0
 margin_bottom = 21.0
@@ -166,7 +173,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Panel3" type="Panel" parent="."]
+[node name="Panel3" type="Panel" parent="Scroll/Box"]
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -178,7 +185,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="ScrollerC" type="ScrollContainer" parent="."]
+[node name="ScrollerC" type="ScrollContainer" parent="Scroll/Box"]
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -191,7 +198,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Controls" type="VBoxContainer" parent="ScrollerC"]
+[node name="Controls" type="VBoxContainer" parent="Scroll/Box/ScrollerC"]
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 198.0
@@ -202,13 +209,13 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label" type="Label" parent="ScrollerC/Controls"]
+[node name="Label" type="Label" parent="Scroll/Box/ScrollerC/Controls"]
 margin_right = 191.0
 margin_bottom = 14.0
 text = "ENVELOPE"
 align = 1
 
-[node name="HSeparator" type="HSeparator" parent="ScrollerC/Controls"]
+[node name="HSeparator" type="HSeparator" parent="Scroll/Box/ScrollerC/Controls"]
 margin_top = 17.0
 margin_right = 191.0
 margin_bottom = 21.0
@@ -216,7 +223,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Panel4" type="Panel" parent="."]
+[node name="Panel4" type="Panel" parent="Scroll/Box"]
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -228,7 +235,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="ScrollerD" type="ScrollContainer" parent="."]
+[node name="ScrollerD" type="ScrollContainer" parent="Scroll/Box"]
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -237,11 +244,8 @@ margin_top = 14.0
 margin_right = -714.0
 margin_bottom = -60.0
 custom_styles/bg = SubResource( 1 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
-[node name="Controls" type="VBoxContainer" parent="ScrollerD"]
+[node name="Controls" type="VBoxContainer" parent="Scroll/Box/ScrollerD"]
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 198.0
@@ -252,13 +256,13 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label" type="Label" parent="ScrollerD/Controls"]
+[node name="Label" type="Label" parent="Scroll/Box/ScrollerD/Controls"]
 margin_right = 191.0
 margin_bottom = 14.0
 text = "FILTERS"
 align = 1
 
-[node name="HSeparator" type="HSeparator" parent="ScrollerD/Controls"]
+[node name="HSeparator" type="HSeparator" parent="Scroll/Box/ScrollerD/Controls"]
 margin_top = 17.0
 margin_right = 191.0
 margin_bottom = 21.0
@@ -289,7 +293,7 @@ margin_left = 646.0
 margin_right = 1280.0
 margin_bottom = 48.0
 size_flags_horizontal = 3
-text = "Save"
+text = "Save Output"
 __meta__ = {
 "_edit_use_anchors_": false
 }
