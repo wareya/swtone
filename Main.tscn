@@ -68,7 +68,7 @@ and on html it opens a file save dialogue
 
 TODO:
 
-- chorus(?) / waveshaper filters (with modulation)
+- modulation for effects where it makes sense
 - more built-in pcm samples
 - random/hybrid buttons (with categories) like sfxr
 - way to save/load json"
@@ -79,7 +79,6 @@ anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = -227.0
-margin_bottom = -48.0
 custom_styles/panel = SubResource( 2 )
 __meta__ = {
 "_edit_use_anchors_": false
@@ -92,11 +91,8 @@ anchor_bottom = 1.0
 margin_left = -215.0
 margin_top = 14.0
 margin_right = -12.0
-margin_bottom = -60.0
+margin_bottom = -12.0
 custom_styles/bg = SubResource( 1 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [node name="Controls" type="VBoxContainer" parent="Scroll/Box/ScrollerA"]
 margin_left = 7.0
@@ -129,7 +125,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = -462.0
 margin_right = -235.0
-margin_bottom = -48.0
 custom_styles/panel = SubResource( 2 )
 __meta__ = {
 "_edit_use_anchors_": false
@@ -142,7 +137,7 @@ anchor_bottom = 1.0
 margin_left = -451.0
 margin_top = 14.0
 margin_right = -246.0
-margin_bottom = -60.0
+margin_bottom = -12.0
 custom_styles/bg = SubResource( 1 )
 __meta__ = {
 "_edit_use_anchors_": false
@@ -179,7 +174,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = -695.0
 margin_right = -468.0
-margin_bottom = -48.0
 custom_styles/panel = SubResource( 2 )
 __meta__ = {
 "_edit_use_anchors_": false
@@ -192,7 +186,7 @@ anchor_bottom = 1.0
 margin_left = -684.0
 margin_top = 14.0
 margin_right = -479.0
-margin_bottom = -60.0
+margin_bottom = -12.0
 custom_styles/bg = SubResource( 1 )
 __meta__ = {
 "_edit_use_anchors_": false
@@ -229,7 +223,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = -930.0
 margin_right = -703.0
-margin_bottom = -48.0
 custom_styles/panel = SubResource( 2 )
 __meta__ = {
 "_edit_use_anchors_": false
@@ -242,7 +235,7 @@ anchor_bottom = 1.0
 margin_left = -919.0
 margin_top = 14.0
 margin_right = -714.0
-margin_bottom = -60.0
+margin_bottom = -12.0
 custom_styles/bg = SubResource( 1 )
 
 [node name="Controls" type="VBoxContainer" parent="Scroll/Box/ScrollerD"]
