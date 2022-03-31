@@ -35,23 +35,58 @@ color = Color( 0.278431, 0.337255, 0.4, 1 )
 
 [node name="Player" type="AudioStreamPlayer" parent="."]
 
+[node name="Buttons2" type="HBoxContainer" parent="."]
+anchor_right = 1.0
+margin_bottom = 42.0
+
+[node name="Pickup" type="Button" parent="Buttons2"]
+margin_right = 424.0
+margin_bottom = 42.0
+size_flags_horizontal = 3
+text = "Pickup/Coin"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Laser" type="Button" parent="Buttons2"]
+margin_left = 428.0
+margin_right = 852.0
+margin_bottom = 42.0
+size_flags_horizontal = 3
+text = "Laser/Hurt"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Explosion" type="Button" parent="Buttons2"]
+margin_left = 856.0
+margin_right = 1280.0
+margin_bottom = 42.0
+size_flags_horizontal = 3
+text = "Explosion"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
 [node name="Scroll" type="ScrollContainer" parent="."]
 anchor_right = 1.0
-anchor_bottom = 0.933
-margin_bottom = 0.23999
+anchor_bottom = 1.0
+margin_top = 42.0
+margin_bottom = -48.0
+mouse_filter = 2
 scroll_vertical_enabled = false
 
-[node name="Box" type="Control" parent="Scroll"]
+[node name="Box" type="HBoxContainer" parent="Scroll"]
 margin_right = 1280.0
-margin_bottom = 672.0
+margin_bottom = 630.0
+rect_min_size = Vector2( 1200, 0 )
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="Label" type="Label" parent="Scroll/Box"]
-margin_left = 8.0
-margin_top = 6.0
-margin_right = 328.0
-margin_bottom = 598.0
+[node name="Label" type="RichTextLabel" parent="Scroll/Box"]
+margin_right = 252.0
+margin_bottom = 630.0
+size_flags_horizontal = 3
 text = "- yes, this is slow. gdscript is slow. be patient. use a low time limit until you have the kind of sound you want. (note: will lock up while generating long sounds. normal.)
 
 - oversampling reduces distortion. turning it up from 1 can ruin some sounds because they depend on distortion to sound the way they do.
@@ -72,32 +107,31 @@ TODO:
 - more built-in pcm samples
 - random/hybrid buttons (with categories) like sfxr
 - way to save/load json"
-autowrap = true
 
-[node name="Panel" type="Panel" parent="Scroll/Box"]
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = -227.0
+[node name="D" type="Panel" parent="Scroll/Box"]
+margin_left = 256.0
+margin_right = 509.0
+margin_bottom = 630.0
+size_flags_horizontal = 3
 custom_styles/panel = SubResource( 2 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="ScrollerA" type="ScrollContainer" parent="Scroll/Box"]
-anchor_left = 1.0
+[node name="Scroller" type="ScrollContainer" parent="Scroll/Box/D"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_left = -215.0
+margin_left = 11.0
 margin_top = 14.0
-margin_right = -12.0
+margin_right = -11.0
 margin_bottom = -12.0
+mouse_filter = 2
 custom_styles/bg = SubResource( 1 )
 
-[node name="Controls" type="VBoxContainer" parent="Scroll/Box/ScrollerA"]
+[node name="Controls" type="VBoxContainer" parent="Scroll/Box/D/Scroller"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 196.0
+margin_right = 224.0
 margin_bottom = 28.0
 size_flags_horizontal = 3
 custom_constants/separation = 3
@@ -105,175 +139,160 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label" type="Label" parent="Scroll/Box/ScrollerA/Controls"]
-margin_right = 189.0
-margin_bottom = 14.0
-text = "EMITTERS"
-align = 1
-
-[node name="HSeparator" type="HSeparator" parent="Scroll/Box/ScrollerA/Controls"]
-margin_top = 17.0
-margin_right = 189.0
-margin_bottom = 21.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Panel2" type="Panel" parent="Scroll/Box"]
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = -462.0
-margin_right = -235.0
-custom_styles/panel = SubResource( 2 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="ScrollerB" type="ScrollContainer" parent="Scroll/Box"]
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = -451.0
-margin_top = 14.0
-margin_right = -246.0
-margin_bottom = -12.0
-custom_styles/bg = SubResource( 1 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Controls" type="VBoxContainer" parent="Scroll/Box/ScrollerB"]
-margin_left = 7.0
-margin_top = 7.0
-margin_right = 198.0
-margin_bottom = 28.0
-size_flags_horizontal = 3
-custom_constants/separation = 3
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Label" type="Label" parent="Scroll/Box/ScrollerB/Controls"]
-margin_right = 191.0
-margin_bottom = 14.0
-text = "MODULATION"
-align = 1
-
-[node name="HSeparator" type="HSeparator" parent="Scroll/Box/ScrollerB/Controls"]
-margin_top = 17.0
-margin_right = 191.0
-margin_bottom = 21.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Panel3" type="Panel" parent="Scroll/Box"]
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = -695.0
-margin_right = -468.0
-custom_styles/panel = SubResource( 2 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="ScrollerC" type="ScrollContainer" parent="Scroll/Box"]
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = -684.0
-margin_top = 14.0
-margin_right = -479.0
-margin_bottom = -12.0
-custom_styles/bg = SubResource( 1 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Controls" type="VBoxContainer" parent="Scroll/Box/ScrollerC"]
-margin_left = 7.0
-margin_top = 7.0
-margin_right = 198.0
-margin_bottom = 28.0
-size_flags_horizontal = 3
-custom_constants/separation = 3
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Label" type="Label" parent="Scroll/Box/ScrollerC/Controls"]
-margin_right = 191.0
-margin_bottom = 14.0
-text = "ENVELOPE"
-align = 1
-
-[node name="HSeparator" type="HSeparator" parent="Scroll/Box/ScrollerC/Controls"]
-margin_top = 17.0
-margin_right = 191.0
-margin_bottom = 21.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Panel4" type="Panel" parent="Scroll/Box"]
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = -930.0
-margin_right = -703.0
-custom_styles/panel = SubResource( 2 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="ScrollerD" type="ScrollContainer" parent="Scroll/Box"]
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = -919.0
-margin_top = 14.0
-margin_right = -714.0
-margin_bottom = -12.0
-custom_styles/bg = SubResource( 1 )
-
-[node name="Controls" type="VBoxContainer" parent="Scroll/Box/ScrollerD"]
-margin_left = 7.0
-margin_top = 7.0
-margin_right = 198.0
-margin_bottom = 28.0
-size_flags_horizontal = 3
-custom_constants/separation = 3
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Label" type="Label" parent="Scroll/Box/ScrollerD/Controls"]
-margin_right = 191.0
+[node name="Label" type="Label" parent="Scroll/Box/D/Scroller/Controls"]
+margin_right = 217.0
 margin_bottom = 14.0
 text = "FILTERS"
 align = 1
 
-[node name="HSeparator" type="HSeparator" parent="Scroll/Box/ScrollerD/Controls"]
+[node name="HSeparator" type="HSeparator" parent="Scroll/Box/D/Scroller/Controls"]
 margin_top = 17.0
-margin_right = 191.0
+margin_right = 217.0
 margin_bottom = 21.0
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Buttons" type="HSplitContainer" parent="."]
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_top = -48.0
+[node name="C" type="Panel" parent="Scroll/Box"]
+margin_left = 513.0
+margin_right = 766.0
+margin_bottom = 630.0
+size_flags_horizontal = 3
+custom_styles/panel = SubResource( 2 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[node name="Scroller" type="ScrollContainer" parent="Scroll/Box/C"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 11.0
+margin_top = 14.0
+margin_right = -11.0
+margin_bottom = -12.0
+mouse_filter = 2
+custom_styles/bg = SubResource( 1 )
+
+[node name="Controls" type="VBoxContainer" parent="Scroll/Box/C/Scroller"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 224.0
+margin_bottom = 28.0
+size_flags_horizontal = 3
+custom_constants/separation = 3
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="Scroll/Box/C/Scroller/Controls"]
+margin_right = 217.0
+margin_bottom = 14.0
+text = "ENVELOPE"
+align = 1
+
+[node name="HSeparator" type="HSeparator" parent="Scroll/Box/C/Scroller/Controls"]
+margin_top = 17.0
+margin_right = 217.0
+margin_bottom = 21.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="B" type="Panel" parent="Scroll/Box"]
+margin_left = 770.0
+margin_right = 1023.0
+margin_bottom = 630.0
+size_flags_horizontal = 3
+custom_styles/panel = SubResource( 2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Scroller" type="ScrollContainer" parent="Scroll/Box/B"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 11.0
+margin_top = 14.0
+margin_right = -11.0
+margin_bottom = -12.0
+mouse_filter = 2
+custom_styles/bg = SubResource( 1 )
+
+[node name="Controls" type="VBoxContainer" parent="Scroll/Box/B/Scroller"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 224.0
+margin_bottom = 28.0
+size_flags_horizontal = 3
+custom_constants/separation = 3
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="Scroll/Box/B/Scroller/Controls"]
+margin_right = 217.0
+margin_bottom = 14.0
+text = "MODULATION"
+align = 1
+
+[node name="HSeparator" type="HSeparator" parent="Scroll/Box/B/Scroller/Controls"]
+margin_top = 17.0
+margin_right = 217.0
+margin_bottom = 21.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="A" type="Panel" parent="Scroll/Box"]
+margin_left = 1027.0
+margin_right = 1280.0
+margin_bottom = 630.0
+size_flags_horizontal = 3
+custom_styles/panel = SubResource( 2 )
+
+[node name="Scroller" type="ScrollContainer" parent="Scroll/Box/A"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 12.0
+margin_top = 14.0
+margin_right = -12.0
+margin_bottom = -12.0
+mouse_filter = 2
+custom_styles/bg = SubResource( 1 )
+
+[node name="Controls" type="VBoxContainer" parent="Scroll/Box/A/Scroller"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 222.0
+margin_bottom = 28.0
+size_flags_horizontal = 3
+custom_constants/separation = 3
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="Scroll/Box/A/Scroller/Controls"]
+margin_right = 215.0
+margin_bottom = 14.0
+text = "EMITTERS"
+align = 1
+
+[node name="HSeparator" type="HSeparator" parent="Scroll/Box/A/Scroller/Controls"]
+margin_top = 17.0
+margin_right = 215.0
+margin_bottom = 21.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Buttons" type="HBoxContainer" parent="."]
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = -48.0
+
 [node name="Regen" type="Button" parent="Buttons"]
-margin_right = 634.0
+margin_right = 638.0
 margin_bottom = 48.0
 size_flags_horizontal = 3
 text = "Regenerate & Play"
@@ -282,7 +301,7 @@ __meta__ = {
 }
 
 [node name="Save" type="Button" parent="Buttons"]
-margin_left = 646.0
+margin_left = 642.0
 margin_right = 1280.0
 margin_bottom = 48.0
 size_flags_horizontal = 3

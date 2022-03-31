@@ -105,7 +105,8 @@ class Flanger extends Filter:
         self.max_depth = int(_max_depth * sample_rate)
         self.rate = float(_rate)
         wet = []
-        for _i in range(max(min_depth, max_depth)*sample_rate):
+        var count = max(min_depth, max_depth)
+        for _i in range(count):
             wet.push_back(Vector2.ZERO)
         if wet.size() == 0:
             wet.push_back(Vector2.ZERO)
@@ -198,8 +199,11 @@ class Waveshaper extends Filter:
         pass
     func push_sample(x):
         memory = x
+        
     func _saw(x):
-        return fmod(fmod(x+1.0, 2.0) + 2.0, 2.0) - 1.0
+        var r = fmod(fmod(x+1.0, 2.0) + 2.0, 2.0) - 1.0
+        return r
+    
     func _tri(x):
         return abs(fmod(fmod(x-1.0, 4.0) + 4.0, 4.0) - 2.0) - 1.0
     func pop_sample():
@@ -383,15 +387,32 @@ class Generator extends Reference:
         else:
             return floor(x*stages)/stages + 1.0/stages/2.0
     
+    var last_sq_cursor = gen_cursor
     func _square(cursor, width = 0.5):
         var x = fmod(cursor, 2.0)/2.0
         var out = -1.0 if x < width else 1.0
+        
+        # FIXME make this work even when the cursor is cycling "backwards"
+        if last_sq_cursor < width and x >= width:
+            var between = inverse_lerp(x, last_sq_cursor, width)
+            out = lerp(-1.0, 1.0, between)
+        elif x < last_sq_cursor:
+            var between = inverse_lerp(x + 1.0, last_sq_cursor, 1.0)
+            out = lerp(1.0, -1.0, between)
+        
         var dc_bias = (width - 0.5) * 2
+        last_sq_cursor = x
         return out + dc_bias
+            
     
+    var last_saw_cursor = 0.0
     func _saw(cursor, exponent = 1.0):
         var n = fmod(cursor, 2.0)-1.0
         var out = pow(abs(n), exponent)*sign(n)
+        # FIXME make work properly when cursor is moving "backwards"
+        if n < last_saw_cursor:
+            out = lerp(-1.0, 1.0, inverse_lerp(last_saw_cursor, n + 2.0, 1.0))
+        last_saw_cursor = n
         return out
     
     func make_pcm_source(clip : AudioStreamSample):
@@ -474,7 +495,7 @@ class Generator extends Reference:
     var tri_stages = 16.0
     var tri_detune = 0.0
     
-    var square_volume = 1.0
+    var square_volume = 0.5
     var square_width = 0.5
     var square_detune = 0.0
     
@@ -555,7 +576,7 @@ class Generator extends Reference:
     
     var chorus_depth = 0.002
     var chorus_rate = 5.0
-    var chorus_wet_amount = 1.0
+    var chorus_wet_amount = 0.0
     var chorus_dry_amount = 1.0
     var chorus_voices = 3
     var chorus = Chorus.new(sample_rate, chorus_depth, chorus_rate, chorus_wet_amount, chorus_dry_amount, chorus_voices)
@@ -721,6 +742,9 @@ class Generator extends Reference:
         gen_time = 0.0
         gen_cursor = 0.0
         
+        last_sq_cursor = 0.0
+        last_saw_cursor = 0.0
+        
         delay = Delay.new(sample_rate, delay_time, delay_decay)
         delay.stereo_offset = delay_stereo_offset
         delay.wet_amount = delay_wet_amount
@@ -765,7 +789,99 @@ class Generator extends Reference:
     
     signal generation_complete
 
-onready var control_target : Node = $Scroll/Box/ScrollerA/Controls
+func set_value(key, value):
+    sliders[key].value = value
+
+func randomize_value(key, _range : Array):
+    var slider : Range = sliders[key]
+    if slider.max_value <= slider.min_value:
+        return
+    
+    # assigning to .value applies the slider's own limit, then triggers the signal that updates the generator
+    if !slider.exp_edit or slider.min_value <= 0.0:
+        slider.value = rand_range(_range[0], _range[1])
+    else:
+        # FIXME make logarithmic
+        _range[0] = max(0.1, _range[0])
+        _range[1] = max(0.1, _range[1])
+        slider.value = exp(rand_range(log(_range[0]), log(_range[1])))
+
+func reset_all_values():
+    for key in default_values.keys():
+        if key in ["oversampling", "time_limit"]:
+            continue
+        set_value(key, default_values[key])
+        pass
+
+func random_choice(array : Array):
+    return array[randi() % array.size()]
+
+func random_pickup():
+    seed(OS.get_ticks_usec() ^ hash("awfiei"))
+    reset_all_values()
+    
+    randomize_value("freq", [400.0, 2400.0])
+    randomize_value("hold", [0.0, 0.1])
+    randomize_value("release", [0.1, 0.5])
+    
+    if randi() % 2:
+        randomize_value("step_time", [0.05, 0.1])
+        randomize_value("step_semitones", [1.0, 7.0])
+        set_value("step_retrigger", 0)
+    
+    generator.generate()
+
+func random_laser():
+    seed(OS.get_ticks_usec() ^ hash("awfiei"))
+    reset_all_values()
+    set_value("square_volume", 0.0)
+    
+    randomize_value("freq", [400.0, 4400.0])
+    randomize_value("hold", [0.2, 0.4])
+    randomize_value("release", [0.05, 0.15])
+    
+    randomize_value("freq_sweep_rate", [-48.0, -256.0])
+    
+    var which = random_choice(["square", "tri", "saw", "sin"])
+    set_value("%s_volume" % which, 1.0)
+    if which == "square":
+        randomize_value("square_width", [0.5, 0.8])
+    
+    set_value("highpass_frequency", 100)
+    
+    generator.generate()
+
+func random_explosion():
+    seed(OS.get_ticks_usec() ^ hash("awfiei"))
+    reset_all_values()
+    set_value("square_volume", 0.0)
+    
+    randomize_value("freq", [40.0, 700.0])
+    randomize_value("hold", [0.0, 0.5])
+    randomize_value("release", [0.5, 1.5])
+    
+    if randi() % 4 > 0:
+        randomize_value("freq_sweep_rate", [-256.0, 64.0])
+    if generator.freq > 500.0:
+        randomize_value("freq_sweep_rate", [-256.0, 0.0])
+    
+    if randi() % 3 == 0:
+        randomize_value("freq_lfo_rate", [3.0, 6.0])
+        randomize_value("freq_lfo_strength", [0.5, 12.0])
+    if randi() % 3 == 0:
+        set_value("ringmod_phase", 0.25)
+        randomize_value("ringmod_frequency", [1.0, 4.0])
+        randomize_value("ringmod_amount", [0.5, 1.0])
+    
+    set_value("pcm_volume", 1.0)
+    randomize_value("pcm_noise_cycle", [256, 65536])
+    
+    #set_value("highpass_frequency", 100)
+    
+    generator.generate()
+    
+
+onready var control_target : Node = $Scroll/Box/A/Scroller/Controls
 
 func set_label_value(label : Label, value : float):
     if abs(value) == 0.0:
@@ -785,6 +901,9 @@ func slider_update(value : float, _slider : Range, number : Label, name : String
     print(name)
     print(generator.get(name))
     pass
+
+var default_values = {}
+var sliders = {}
 
 func add_slider(name : String, min_value, max_value):
     var value = generator.get(name)
@@ -809,11 +928,13 @@ func add_slider(name : String, min_value, max_value):
     slider.tick_count = 5
     slider.ticks_on_borders = true
     slider.add_to_group("Slider")
+    sliders[name] = slider
     
     slider.connect("value_changed", self, "slider_update", [slider, number, name])
     slider.value = value
     
     var container = HSplitContainer.new()
+    container.dragger_visibility = container.DRAGGER_HIDDEN
     container.add_child(number)
     container.add_child(slider)
     
@@ -858,7 +979,7 @@ func add_controls():
     add_slider("pcm_source", 0, 5).step = 1
     add_slider("pcm_sample_loop", 0, 1).step = 1
     
-    control_target = $Scroll/Box/ScrollerB/Controls
+    control_target = $Scroll/Box/B/Scroller/Controls
     
     add_slider("step_time", 0.0, 5.0)
     add_slider("step_semitones", -48, 48)
@@ -872,8 +993,12 @@ func add_controls():
     add_separator()
     add_slider("freq_sweep_rate", -12*32, 12*32).step = 1
     add_slider("freq_sweep_delta", -12*32, 12*32).step = 1
+    add_separator()
+    add_slider("ringmod_frequency", 0.01, 22050.0).exp_edit = true
+    add_slider("ringmod_phase", 0.0, 1.0)
+    add_slider("ringmod_amount", -2.0, 2.0)
     
-    control_target = $Scroll/Box/ScrollerC/Controls
+    control_target = $Scroll/Box/C/Scroller/Controls
     
     slider = add_slider("time_limit", 0.1, 50.0)
     slider.exp_edit = true
@@ -898,7 +1023,7 @@ func add_controls():
     add_slider("limiter_release", 0.0, 0.5)
     add_slider("limiter_threshold", 0.0, 1.0)
     
-    control_target = $Scroll/Box/ScrollerD/Controls
+    control_target = $Scroll/Box/D/Scroller/Controls
     add_slider("oversampling", 1, 8.0).step = 1
     add_separator()
     add_slider("delay_time", 0.001, 4.0).step = 0.001
@@ -910,10 +1035,6 @@ func add_controls():
     add_slider("lowpass_frequency", 20.0, 22050.0).exp_edit = true
     add_separator()
     add_slider("highpass_frequency", 20.0, 22050.0).exp_edit = true
-    add_separator()
-    add_slider("ringmod_frequency", 0.01, 22050.0).exp_edit = true
-    add_slider("ringmod_phase", 0.0, 1.0)
-    add_slider("ringmod_amount", -2.0, 2.0)
     add_separator()
     add_slider("flanger_min_depth", 0.0, 0.5)
     add_slider("flanger_max_depth", 0.0, 0.5)
@@ -939,6 +1060,7 @@ func add_controls():
     for _slider in get_tree().get_nodes_in_group("Slider"):
         print(_slider.name)
         var value = generator.get(_slider.name)
+        default_values[_slider.name] = value
         _slider.value = value
         pass
     #add_separator()
@@ -1034,6 +1156,10 @@ func _ready():
     
     _unused = $Buttons/Regen.connect("pressed", generator, "generate")
     _unused = $Buttons/Save.connect("pressed", self, "save")
+    
+    _unused = $Buttons2/Pickup.connect("pressed", self, "random_pickup")
+    _unused = $Buttons2/Laser.connect("pressed", self, "random_laser")
+    _unused = $Buttons2/Explosion.connect("pressed", self, "random_explosion")
     
     yield(get_tree().create_timer(generator.samples.size() / generator.sample_rate + 0.25), "timeout")
     yield(get_tree(), "idle_frame")
