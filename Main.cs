@@ -2,7 +2,9 @@ using Microsoft.CSharp;
 using System;
 using Godot;
 using Dictionary = Godot.Collections.Dictionary;
-using Array = Godot.Collections.Array;
+
+using System.Collections.Generic;
+using Array = System.Collections.ArrayList;
 
 
 public class Main : Control
@@ -29,14 +31,14 @@ public class Main : Control
         public int diffusion = 8;
         public float diffusion_ratio = 1.0f;
         
-        public Godot.Collections.Array<Vector2> wet;
+        public List<Vector2> wet;
         public Vector2 dry = Vector2.Zero;
         public int cursor = 0;
         
         public Delay(float sample_rate, float time, float decay) : base(sample_rate)
         {
             this.decay = decay;
-            wet = new Godot.Collections.Array<Vector2>();
+            wet = new List<Vector2>();
             foreach(var _i in GD.Range((int)(time*sample_rate)))
             {
                 wet.Add(Vector2.Zero);
@@ -78,7 +80,7 @@ public class Main : Control
             
         }
     
-        public Vector2 PopSample()
+        public override Vector2 PopSample()
         {
             if(diffusion == 0)
             {
@@ -145,7 +147,7 @@ public class Main : Control
             dry = x;
         }
     
-        public Vector2 PopSample()
+        public override Vector2 PopSample()
         {
             delay1.PushSample(dry);
             delay2.PushSample(delay1.PopSample());
@@ -176,7 +178,7 @@ public class Main : Control
             memory = memory.LinearInterpolate(x, decay_constant);
         }
     
-        public Vector2 PopSample()
+        public override Vector2 PopSample()
         {
             return memory;
         }
@@ -205,7 +207,7 @@ public class Main : Control
             memory2 = x;
         }
     
-        public Vector2 PopSample()
+        public override Vector2 PopSample()
         {
             return memory2 - memory;
         }
@@ -229,7 +231,7 @@ public class Main : Control
             memory = x;
         }
     
-        public Vector2 PopSample()
+        public override Vector2 PopSample()
         {
             var r = memory * Mathf.Sin(cursor*Mathf.Pi*2.0f + phase*Mathf.Pi*2.0f);
             cursor += frequency*2.0f/sample_rate;
@@ -247,10 +249,11 @@ public class Main : Control
         public float feedback = 0.5f;
         
         public int cursor = 0;
-        public Godot.Collections.Array<Vector2> wet;
+        public List<Vector2> wet;
         
         public Flanger(float sample_rate, float _min_depth, float _max_depth, float _rate) : base(sample_rate)
         {
+            wet = new List<Vector2>();
             this.min_depth = (int)(_min_depth * sample_rate);
             this.max_depth = (int)(_max_depth * sample_rate);
             this.rate = (float)(_rate);
@@ -275,7 +278,7 @@ public class Main : Control
             return Mathf.Abs((Mathf.PosMod((x*2.0f)+1.0f,2.0f)-1.0f));
         }
         
-        public Vector2 PopSample()
+        public override Vector2 PopSample()
         {
             var lfo_amount = _Tri(cursor/sample_rate * (rate > 0.0f ? (1.0f/rate) : 0.0f));
             float _samples_into_past = Mathf.Lerp(min_depth, max_depth, lfo_amount);
@@ -303,7 +306,7 @@ public class Main : Control
         public int voices = 3;
         
         public int cursor = 0;
-        public Godot.Collections.Array<Vector2> wet;
+        public List<Vector2> wet;
         //var stereo_offset = -0.01;
         public Chorus(float sample_rate, float depth, float _rate, float _wet, float _dry, int _voices) : base(sample_rate)
         {
@@ -312,7 +315,7 @@ public class Main : Control
             dry_amount = _dry;
             voices = _voices;
             
-            wet = new Godot.Collections.Array<Vector2>();
+            wet = new List<Vector2>();
             foreach(var _i in GD.Range((int)(depth*sample_rate)))
             {
                 wet.Add(Vector2.Zero);
@@ -334,7 +337,7 @@ public class Main : Control
             return Mathf.Abs((Mathf.PosMod((x*2.0f)+1.0f,2.0f)-1.0f));
         }
     
-        public Vector2 PopSample()
+        public override Vector2 PopSample()
         {
             Vector2 lfo_sum = new Vector2();
             foreach(var i in GD.Range(voices))
@@ -389,7 +392,7 @@ public class Main : Control
             return Mathf.Abs(Mathf.PosMod(Mathf.PosMod(x-1.0f, 4.0f) + 4.0f, 4.0f) - 2.0f) - 1.0f;
         }
     
-        public Vector2 PopSample()
+        public override Vector2 PopSample()
         {
             Vector2 shaped = memory*pre_gain;
             shaped = shaped.Abs();
@@ -434,8 +437,8 @@ public class Main : Control
         public float pre_gain = 1.0f;
         public float lookahead = 0.001f;
         public float attack = 0.001f;
-        public float sustain = 0.01f;
-        public float release = 0.01f;
+        public float sustain = 0.04f;
+        public float release = 0.04f;
         public float threshold = 1.0f;
         
         public float amplitude = 1.0f;
@@ -443,13 +446,20 @@ public class Main : Control
         public float hit_amplitude = 1.0f;
         public float time = 0.0f;
         
-        public Godot.Collections.Array<Vector2> buffer;
-        public Godot.Collections.Array<float> buffer_max;
-        public Godot.Collections.Array<float> buffer_max_bucket;
-        public Godot.Collections.Array<bool> buffer_max_bucket_dirty;
+        public List<Vector2> buffer;
+        public List<float> buffer_max;
+        public List<float> buffer_max_bucket;
+        
+        public int bucket_dirty = -1;
         public int bucket_size = 128;
         public int cursor = 0;
         
+        public float attack_amplitude_raw = 1.0f;
+        public float attack_amplitude = 1.0f;
+        public List<float> attack_buffer;
+        public int attack_cursor = 0;
+        // FIXME: identify whatever bug is causing this: https://i.imgur.com/eji72dw.png
+        // lookahead? attack? no clue
         public Limiter(float sample_rate, float _pre_gain, float _lookahead, float _attack, float _sustain, float _release, float _threshold) : base(sample_rate)
         {
             pre_gain = _pre_gain;
@@ -458,6 +468,16 @@ public class Main : Control
             sustain = _sustain;
             release = _release;
             threshold = _threshold;
+            
+            bucket_size = Mathf.Max(1, (int)(Mathf.Sqrt((sustain + lookahead) * sample_rate)));
+            GD.Print($"bucket size {bucket_size}");
+            
+            buffer = new List<Vector2>();
+            buffer_max = new List<float>();
+            buffer_max_bucket = new List<float>();
+            
+            attack_buffer = new List<float>();
+            
             foreach(var _i in GD.Range((int)(lookahead * sample_rate + 1)))
             {
                 buffer.Add(new Vector2());
@@ -468,7 +488,6 @@ public class Main : Control
                 if((int)(i) % bucket_size == 0)
                 {
                     buffer_max_bucket.Add(0.0f);
-                    buffer_max_bucket_dirty.Add(false);
                 }
             }
             if(buffer.Count == 0)
@@ -479,31 +498,32 @@ public class Main : Control
             {
                 buffer_max.Add(0.0f);
                 buffer_max_bucket.Add(0.0f);
-                buffer_max_bucket_dirty.Add(false);
             }
             time = 0.0f;
         }
+        
+        float last_max = 0.0f;
         public float MaxBuffer()
         {
-            foreach(var i in GD.Range(buffer_max_bucket_dirty.Count))
+            if(bucket_dirty >= 0)
             {
-                if(buffer_max_bucket_dirty[i])
+                float y = 0.0f;
+                //foreach(var j in GD.Range(bucket_dirty*bucket_size, Mathf.Min((bucket_dirty+1)*bucket_size, buffer_max.Count)))
+                var max = Mathf.Min((bucket_dirty+1)*bucket_size, buffer_max.Count);
+                for(var j = bucket_dirty*bucket_size; j < max; j++)
                 {
-                    float y = 0.0f;
-                    foreach(var j in GD.Range(i*bucket_size, Mathf.Min((i+1)*bucket_size, buffer_max.Count)))
-                    {
-                        var n = buffer_max[j];
-                        y = Mathf.Max(n, y);
-                    }
-                    buffer_max_bucket[i] = y;
-                    buffer_max_bucket_dirty[i] = false;
+                    var n = buffer_max[j];
+                    y = Mathf.Max(n, y);
                 }
+                buffer_max_bucket[bucket_dirty] = y;
+                bucket_dirty = -1;
             }
             float x = 0.0f;
-            foreach(var n in buffer_max_bucket)
+            for(var n = 0; n < buffer_max_bucket.Count; n++)
             {
-                x = Mathf.Max(n, x);
+                x = Mathf.Max(buffer_max_bucket[n], x);
             }
+            last_max = x;
             return x;
         }
     
@@ -520,10 +540,23 @@ public class Main : Control
             
             buffer[cursor % buffer.Count] = x;
             var loudness = Mathf.Max(Mathf.Abs(x.x), Mathf.Abs(x.y));
+            var old_loudness = buffer_max[cursor % buffer_max.Count];
             buffer_max[cursor % buffer_max.Count] = loudness;
-            buffer_max_bucket_dirty[(int)(Mathf.Floor((float)(cursor % buffer_max.Count)/(float)bucket_size))] = true;
             
-            var envelope = MaxBuffer();
+            var bucket_index = (cursor % buffer_max.Count)/bucket_size;
+            var cached_for_bucket = buffer_max_bucket[bucket_index];
+            float envelope = last_max;
+            
+            if (old_loudness >= last_max || loudness > last_max)
+            {
+                bucket_dirty = bucket_index;
+                envelope = MaxBuffer();
+            }
+            else if (old_loudness >= cached_for_bucket || loudness > cached_for_bucket)
+            {
+                bucket_dirty = bucket_index;
+                envelope = MaxBuffer(); // value will be the same but still need to call it
+            }
             
             if(release > 0)
             {
@@ -551,17 +584,11 @@ public class Main : Control
                 amplitude = threshold/Mathf.Max(envelope, threshold);
             }
             HandleAttack();
-            // this "attack" algorithm is numerically unstable but very fast
-            // and the instability doesn't matter for the mere seconds/minutes of audio swtone produces
         }
-    
-        public float attack_amplitude_raw = 1.0f;
-        public float attack_amplitude = 1.0f;
-        public Godot.Collections.Array<float> attack_buffer;
-        public int attack_cursor = 0;
+        
         public void HandleAttack()
         {
-            if(attack == 0.0)
+            if(attack == 0.0f)
             {
                 attack_amplitude = amplitude;
                 return;
@@ -574,20 +601,25 @@ public class Main : Control
                     attack_buffer.Add(amplitude);
                     attack_amplitude += amplitude;
                 }
-                attack_amplitude /= attack_buffer.Count;
+                attack_amplitude /= (float)attack_buffer.Count;
             }
             var old = attack_buffer[attack_cursor % attack_buffer.Count];
             attack_buffer[attack_cursor % attack_buffer.Count] = amplitude;
             attack_cursor += 1;
             
+            // this "attack" algorithm is numerically unstable but very fast
+            // and the instability doesn't matter for the mere seconds/minutes of audio swtone produces
+            attack_amplitude += amplitude/(float)attack_buffer.Count - old/(float)attack_buffer.Count;
+            /*
             attack_amplitude = 0.0f;
             foreach(var b in attack_buffer)
             {
                 attack_amplitude += b / attack_buffer.Count;
             }
+            */
         }
     
-        public Vector2 PopSample()
+        public override Vector2 PopSample()
         {
             if(threshold == 0.0f)
             {
@@ -607,7 +639,7 @@ public class Main : Control
     public class Generator : Reference
     {
         public Node parent;
-        public Godot.Collections.Array<Vector2> samples;
+        public List<Vector2> samples;
         public float sample_rate = 44100.0f;
         public float freq = 440.0f;
         public float freq_offset_lfo = 0.0f; // semitones
@@ -693,7 +725,7 @@ public class Main : Control
         
         }
     
-        static public Godot.Collections.Array<Vector2> MakePcmSource(AudioStreamSample clip)
+        static public List<Vector2> MakePcmSource(AudioStreamSample clip)
         {
             int bytes_per_sample = 1;
             if(clip.Format == AudioStreamSample.FormatEnum.Format16Bits)
@@ -708,7 +740,7 @@ public class Main : Control
             var stream = new StreamPeerBuffer();
             stream.PutData(clip.Data);
             stream.Seek(0);
-            var samples = new Godot.Collections.Array<Vector2>();
+            var samples = new List<Vector2>();
             if(clip.Format == AudioStreamSample.FormatEnum.Format16Bits)
             {
                 foreach(var _i in GD.Range(sample_count))
@@ -722,13 +754,13 @@ public class Main : Control
             return samples;
         }
     
-        public Godot.Collections.Array<Godot.Collections.Array<Vector2>> pcm_sources = new Godot.Collections.Array<Godot.Collections.Array<Vector2>>{
+        public List<List<Vector2>> pcm_sources = new List<List<Vector2>>{
             MakePcmSource(GD.Load("res://paper bag.wav") as AudioStreamSample),
             MakePcmSource(GD.Load("res://plastic crinkle.wav") as AudioStreamSample),
             MakePcmSource(GD.Load("res://plastic crunch.wav") as AudioStreamSample),
             MakePcmSource(GD.Load("res://tambourine.wav") as AudioStreamSample),
         };
-        public Godot.Collections.Array<Vector2> pcm_source_custom;
+        public List<Vector2> pcm_source_custom;
         public float pcm_sample_loop = 1.0f;
         public float pcm_source = 0.0f;
         public float pcm_volume = 0.0f;
@@ -951,7 +983,7 @@ public class Main : Control
             (parent.FindNode("Regen") as Button).Disabled = true;
             //pcm_source = MakePcmSource(GD.Load("res://tambourine.wav"));
             //pcm_source = MakePcmSource(GD.Load("res://paper bag.wav"));
-            samples = new Godot.Collections.Array<Vector2>();
+            samples = new List<Vector2>();
             Restart();
             
             int aa = oversampling;
@@ -1234,9 +1266,25 @@ public class Main : Control
         delegate void generation_complete();
     }
     
-    public void SetValue(String key, float value)
+    public void SetSliderValue(Range slider, object value)
+    {
+        if (value is int)
+        {
+            slider.Value = (float)(int)value;
+        }
+        else if (value is bool)
+        {
+            slider.Value = ((bool)value) ? 1.0f : 0.0f;
+        }
+        else
+        {
+            slider.Value = (float)value;
+        }
+    }
+    
+    public void SetValue(String key, object value)
     {  
-        (sliders[key] as Range).Value = value;
+        SetSliderValue(sliders[key] as Range, value);
     }
     
     public void RandomizeValue(String key, float lower, float upper)
@@ -1365,7 +1413,7 @@ public class Main : Control
             
         }
         SetValue("pcm_volume", 1.0f);
-        RandomizeValue("pcm_noise_cycle", 32.0f, 65536);
+        RandomizeValue("pcm_noise_cycle", 32.0f, 65536.0f);
         
         //set_value("highpass_frequency", 100)
         
@@ -1481,7 +1529,7 @@ public class Main : Control
     
     public void SetLabelValue(Label label, float value)
     {  
-        if(Mathf.Abs(value) == 0.0)
+        if(Mathf.Abs(value) == 0.0f)
         {
             label.Text = "0.00";
         }
@@ -1507,28 +1555,44 @@ public class Main : Control
     
     public void SliderUpdate(float value, Range _slider, Label number, String name)
     {  
-        SetLabelValue(number, value);
-        generator.Set(name, value);
+        if (generator.Get(name) is int)
+        {
+            SetLabelValue(number, (float)value);
+            generator.Set(name, (int)value);
+        }
+        else
+        {
+            generator.Set(name, (float)value);
+        }
         GD.Print(name);
         GD.Print(generator.Get(name));
     }
     
-    public Godot.Collections.Dictionary<String, float> default_values
-        = new Godot.Collections.Dictionary<String, float>(){};
+    public Godot.Collections.Dictionary<String, object> default_values
+        = new Godot.Collections.Dictionary<String, object>(){};
     public Godot.Collections.Dictionary<String, Range> sliders
         = new Godot.Collections.Dictionary<String, Range>(){};
     
     public Slider AddSlider(String name, float MinValue, float MaxValue)
     {  
-        GD.Print($"adding {name}");
-        
         var value = generator.Get(name);
         
         var label = new Label();
         label.Text = name.Capitalize();
         
         var number = new Label();
-        SetLabelValue(number, (float)value);
+        if (value is int)
+        {
+            SetLabelValue(number, (float)(int)value);
+        }
+        else if (value is bool)
+        {
+            SetLabelValue(number, ((bool)value) ? 1.0f : 0.0f);
+        }
+        else
+        {
+            SetLabelValue(number, (float)value);
+        }
         number.SizeFlagsHorizontal |= (int)SizeFlags.ExpandFill;
         number.SizeFlagsStretchRatio = 0.25f;
         number.Align = Label.AlignEnum.Right;
@@ -1546,8 +1610,8 @@ public class Main : Control
         slider.AddToGroup("Slider");
         sliders[name] = slider;
         
-        slider.Connect("value_changed", this, "slider_update", new Array(){slider, number, name});
-        slider.Value = (double)value;
+        slider.Connect("value_changed", this, "SliderUpdate", new Godot.Collections.Array(){slider, number, name});
+        SetSliderValue(slider, value);
         
         var container = new HSplitContainer();
         container.DraggerVisibility = SplitContainer.DraggerVisibilityEnum.Hidden;
@@ -1690,9 +1754,9 @@ public class Main : Control
         {
             var slider2 = _slider as Slider;
             GD.Print(slider2.Name);
-            var value = (float)generator.Get(slider2.Name);
+            var value = generator.Get(slider2.Name);
             default_values[slider2.Name] = value;
-            slider2.Value = value;
+            SetSliderValue(slider2, value);
         }
     }
     
@@ -1803,18 +1867,18 @@ public class Main : Control
         await ToSignal(GetTree(), "idle_frame");
         await ToSignal(GetTree(), "idle_frame");
         
-        _unused = generator.Connect("generation_complete", this, "update_player");
+        _unused = generator.Connect("generation_complete", this, "UpdatePlayer");
         generator.Generate();
         
-        _unused = GetNode("VBox/Buttons/Regen").Connect("pressed", generator, "generate");
-        _unused = GetNode("VBox/Buttons/Save").Connect("pressed", this, "save");
+        _unused = GetNode("VBox/Buttons/Regen").Connect("pressed", generator, "Generate");
+        _unused = GetNode("VBox/Buttons/Save").Connect("pressed", this, "Save");
         
-        _unused = GetNode("VBox/Buttons2/Pickup").Connect("pressed", this, "random_pickup");
-        _unused = GetNode("VBox/Buttons2/Laser").Connect("pressed", this, "random_laser");
-        _unused = GetNode("VBox/Buttons2/Explosion").Connect("pressed", this, "random_explosion");
-        _unused = GetNode("VBox/Buttons2/Powerup").Connect("pressed", this, "random_powerup");
-        _unused = GetNode("VBox/Buttons2/Hit").Connect("pressed", this, "random_hit");
-        _unused = GetNode("VBox/Buttons2/Jump").Connect("pressed", this, "random_jump");
-        _unused = GetNode("VBox/Buttons2/Blip").Connect("pressed", this, "random_blip");
+        _unused = GetNode("VBox/Buttons2/Pickup").Connect("pressed", this, "RandomPickup");
+        _unused = GetNode("VBox/Buttons2/Laser").Connect("pressed", this, "RandomLaser");
+        _unused = GetNode("VBox/Buttons2/Explosion").Connect("pressed", this, "RandomExplosion");
+        _unused = GetNode("VBox/Buttons2/Powerup").Connect("pressed", this, "RandomPowerup");
+        _unused = GetNode("VBox/Buttons2/Hit").Connect("pressed", this, "RandomHit");
+        _unused = GetNode("VBox/Buttons2/Jump").Connect("pressed", this, "RandomJump");
+        _unused = GetNode("VBox/Buttons2/Blip").Connect("pressed", this, "RandomBlip");
     }
 }
