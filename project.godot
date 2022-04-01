@@ -37,6 +37,14 @@ gdscript/warnings/shadowed_variable=false
 window/size/width=1280
 window/size/height=720
 
+[editor_plugins]
+
+enabled=PoolStringArray( "res://addons/gd2cs.py/plugin.cfg" )
+
+[gd2cs]
+
+config/ask_no_python=true
+
 [importer_defaults]
 
 wav={

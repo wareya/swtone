@@ -11,3 +11,5 @@ bgm/ignore
 *.zip
 sfx_output/
 .export/
+addons/gd2cs.py
+.mono/
