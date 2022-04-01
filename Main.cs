@@ -1038,10 +1038,7 @@ public class Main : Control
                 var sample = next * 0.5f / aa * envelope;
                 samples.Add(sample);
                 gen_time += 1/sample_rate;
-                //if(UpdateEvents(old_time))
-                //{
-                //    break;
-                //}
+                UpdateEvents(old_time);
                 UpdateFilters();
                 sample = samples[samples.Count-1];
                 
@@ -1204,8 +1201,6 @@ public class Main : Control
             }
             var sweep_offset = freq_sweep_delta * gen_time;
             freq_offset_sweep += (freq_sweep_rate + sweep_offset) * 1.0f/sample_rate;
-            //return true
-            
         }
     
         public void Restart()
@@ -1293,8 +1288,8 @@ public class Main : Control
         if(slider.MaxValue <= slider.MinValue)
         {
             return;
-            // assigning to .value applies the slider's own limit, then triggers the signal that updates the generator
         }
+        // assigning to .value applies the slider's own limit, then triggers the signal that updates the generator
         if(!slider.ExpEdit || slider.MinValue <= 0.0f)
         {
             slider.Value = GD.RandRange(lower, upper);
@@ -1302,9 +1297,9 @@ public class Main : Control
         else
         {
             float step = Mathf.Max(0.001f, (float)(slider.Step));
-            lower = Mathf.Max(step, upper);
-            lower = Mathf.Max(step, upper);
-            slider.Value = Mathf.Exp((float)GD.RandRange(Mathf.Log(lower), (float)Mathf.Log(upper)));
+            lower = Mathf.Max(step, lower);
+            upper = Mathf.Max(step, upper);
+            slider.Value = Mathf.Exp((float)GD.RandRange(Mathf.Log(lower), Mathf.Log(upper)));
         }
     }
     
@@ -1328,6 +1323,8 @@ public class Main : Control
     
     public void RandomPickup()
     {  
+        GD.Print("seed:");
+        GD.Print(OS.GetTicksUsec());
         GD.Seed(OS.GetTicksUsec() ^ 1234895143);
         ResetAllValues();
         SetValue("square_volume", 0.0f);
@@ -1373,7 +1370,8 @@ public class Main : Control
         generator.Generate();
     }
     
-    public void RandomExplosion(bool no_delay = false)
+    bool explosion_no_delay = false;
+    public void RandomExplosion()
     {  
         GD.Seed(OS.GetTicksUsec() ^ 1234895143);
         ResetAllValues();
@@ -1404,7 +1402,7 @@ public class Main : Control
             RandomizeValue("ringmod_amount", 0.5f, 1.0f);
         
         }
-        if(!no_delay && GD.Randi() % 3 == 0)
+        if(!explosion_no_delay && GD.Randi() % 3 == 0)
         {
             RandomizeValue("delay_time", 0.2f, 0.4f);
             RandomizeValue("delay_wet_amount", 0.1f, 0.4f);
@@ -1490,7 +1488,9 @@ public class Main : Control
         GD.Seed(OS.GetTicksUsec() ^ 1234895143);
         if(GD.Randi() % 4 == 0)
         {
-            RandomExplosion(true);
+            explosion_no_delay = true;
+            RandomExplosion();
+            explosion_no_delay = false;
         }
         else
         {
@@ -1533,24 +1533,25 @@ public class Main : Control
         {
             label.Text = "0.00";
         }
-        /*
         else if(Mathf.Abs(value) < 0.1)
         {
-            label.Text = "%.3f" % value;
+            label.Text = $"{value:F3}";
         }
         else if(Mathf.Abs(value) < 10)
         {
-            label.Text = "%.2f" % value;
+            label.Text = $"{value:F2}";
+            //label.Text = "%.2f" % value;
         }
         else if(Mathf.Abs(value) < 1000)
         {
-            label.Text = "%.1f" % value;
+            label.Text = $"{value:F1}";
+            //label.Text = "%.1f" % value;
         }
         else
         {
-            label.Text = "%.0f" % value;
+            label.Text = $"{value:0}";
+            //label.Text = "%.0f" % value;
         }
-        */
     }
     
     public void SliderUpdate(float value, Range _slider, Label number, String name)
@@ -1562,10 +1563,11 @@ public class Main : Control
         }
         else
         {
+            SetLabelValue(number, value);
             generator.Set(name, (float)value);
         }
-        GD.Print(name);
-        GD.Print(generator.Get(name));
+        //GD.Print(name);
+        //GD.Print(generator.Get(name));
     }
     
     public Godot.Collections.Dictionary<String, object> default_values
