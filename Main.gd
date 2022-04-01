@@ -1073,7 +1073,7 @@ func random_blip():
     
     generator.generate()
 
-onready var control_target : Node = $Scroll/Box/A/Scroller/Controls
+onready var control_target : Node = $VBox/Scroll/Box/A/Scroller/Controls
 
 func set_label_value(label : Label, value : float):
     if abs(value) == 0.0:
@@ -1171,7 +1171,7 @@ func add_controls():
     add_slider("pcm_source", 0, 5).step = 1
     add_slider("pcm_sample_loop", 0, 1).step = 1
     
-    control_target = $Scroll/Box/B/Scroller/Controls
+    control_target = $VBox/Scroll/Box/B/Scroller/Controls
     
     add_slider("step_time", 0.0, 5.0)
     add_slider("step_semitones", -48, 48)
@@ -1190,7 +1190,7 @@ func add_controls():
     add_slider("ringmod_phase", 0.0, 1.0)
     add_slider("ringmod_amount", -2.0, 2.0)
     
-    control_target = $Scroll/Box/C/Scroller/Controls
+    control_target = $VBox/Scroll/Box/C/Scroller/Controls
     
     slider = add_slider("time_limit", 0.1, 50.0)
     slider.exp_edit = true
@@ -1215,7 +1215,7 @@ func add_controls():
     add_slider("limiter_release", 0.0, 0.5)
     add_slider("limiter_threshold", 0.0, 1.0)
     
-    control_target = $Scroll/Box/D/Scroller/Controls
+    control_target = $VBox/Scroll/Box/D/Scroller/Controls
     add_slider("oversampling", 1, 8.0).step = 1
     add_separator()
     add_slider("delay_time", 0.001, 4.0).step = 0.001
@@ -1334,6 +1334,26 @@ var generator : Reference
 var playback
 var ready = false
 func _ready():
+    
+    var scrollbar = $VBox/Scroll.get_h_scrollbar()
+    scrollbar.add_icon_override("decrement", preload("res://left.png"))
+    scrollbar.add_icon_override("decrement_highlight", preload("res://lefthover.png"))
+    scrollbar.add_icon_override("decrement_pressed", preload("res://leftclick.png"))
+    scrollbar.add_icon_override("increment", preload("res://right.png"))
+    scrollbar.add_icon_override("increment_highlight", preload("res://righthover.png"))
+    scrollbar.add_icon_override("increment_pressed", preload("res://rightclick.png"))
+    scrollbar.custom_step = 128
+    #scrollbar.size_flags_vertical = SIZE_FILL
+    #scrollbar.rect_min_size.y = 24
+    #var a = scrollbar.get_stylebox("scroll")
+    #print(a)
+    #a.content_margin_top = 0
+    #a.content_margin_left = -1
+    #a.content_margin_right = -1
+    #a.content_margin_bottom = 16
+    #a.expand_margin_bottom = 8
+    #print(a.get_center_size())
+    
     var _unused = get_tree().connect("files_dropped", self, "_on_files_dropped")
     
     generator = Generator.new()
@@ -1352,20 +1372,16 @@ func _ready():
     
     ready = true
     
-    _unused = $Buttons/Regen.connect("pressed", generator, "generate")
-    _unused = $Buttons/Save.connect("pressed", self, "save")
+    _unused = $VBox/Buttons/Regen.connect("pressed", generator, "generate")
+    _unused = $VBox/Buttons/Save.connect("pressed", self, "save")
     
-    _unused = $Buttons2/Pickup.connect("pressed", self, "random_pickup")
-    _unused = $Buttons2/Laser.connect("pressed", self, "random_laser")
-    _unused = $Buttons2/Explosion.connect("pressed", self, "random_explosion")
-    _unused = $Buttons2/Powerup.connect("pressed", self, "random_powerup")
-    _unused = $Buttons2/Hit.connect("pressed", self, "random_hit")
-    _unused = $Buttons2/Jump.connect("pressed", self, "random_jump")
-    _unused = $Buttons2/Blip.connect("pressed", self, "random_blip")
-    
-    yield(get_tree().create_timer(generator.samples.size() / generator.sample_rate + 0.25), "timeout")
-    yield(get_tree(), "idle_frame")
-    yield(get_tree(), "idle_frame")
+    _unused = $VBox/Buttons2/Pickup.connect("pressed", self, "random_pickup")
+    _unused = $VBox/Buttons2/Laser.connect("pressed", self, "random_laser")
+    _unused = $VBox/Buttons2/Explosion.connect("pressed", self, "random_explosion")
+    _unused = $VBox/Buttons2/Powerup.connect("pressed", self, "random_powerup")
+    _unused = $VBox/Buttons2/Hit.connect("pressed", self, "random_hit")
+    _unused = $VBox/Buttons2/Jump.connect("pressed", self, "random_jump")
+    _unused = $VBox/Buttons2/Blip.connect("pressed", self, "random_blip")
     
     
     

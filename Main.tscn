@@ -35,97 +35,142 @@ color = Color( 0.278431, 0.337255, 0.4, 1 )
 
 [node name="Player" type="AudioStreamPlayer" parent="."]
 
-[node name="Buttons2" type="HBoxContainer" parent="."]
+[node name="VBox" type="VBoxContainer" parent="."]
 anchor_right = 1.0
-margin_bottom = 42.0
+anchor_bottom = 1.0
 
-[node name="Pickup" type="Button" parent="Buttons2"]
-margin_right = 179.0
-margin_bottom = 42.0
+[node name="Buttons2" type="HBoxContainer" parent="VBox"]
+margin_right = 1280.0
+margin_bottom = 30.0
+rect_min_size = Vector2( 0, 30 )
+
+[node name="Label" type="Label" parent="VBox/Buttons2"]
+margin_top = 8.0
+margin_right = 72.0
+margin_bottom = 22.0
+text = "  Random:  "
+
+[node name="Pickup" type="Button" parent="VBox/Buttons2"]
+margin_left = 76.0
+margin_right = 244.0
+margin_bottom = 30.0
 size_flags_horizontal = 3
 text = "Pickup/Coin"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Laser" type="Button" parent="Buttons2"]
-margin_left = 183.0
-margin_right = 362.0
-margin_bottom = 42.0
+[node name="Laser" type="Button" parent="VBox/Buttons2"]
+margin_left = 248.0
+margin_right = 417.0
+margin_bottom = 30.0
 size_flags_horizontal = 3
 text = "Laser/Hurt"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Explosion" type="Button" parent="Buttons2"]
-margin_left = 366.0
-margin_right = 546.0
-margin_bottom = 42.0
+[node name="Explosion" type="Button" parent="VBox/Buttons2"]
+margin_left = 421.0
+margin_right = 589.0
+margin_bottom = 30.0
 size_flags_horizontal = 3
 text = "Explosion"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Powerup" type="Button" parent="Buttons2"]
-margin_left = 550.0
-margin_right = 729.0
-margin_bottom = 42.0
+[node name="Powerup" type="Button" parent="VBox/Buttons2"]
+margin_left = 593.0
+margin_right = 762.0
+margin_bottom = 30.0
 size_flags_horizontal = 3
 text = "Powerup"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Hit" type="Button" parent="Buttons2"]
-margin_left = 733.0
-margin_right = 913.0
-margin_bottom = 42.0
+[node name="Hit" type="Button" parent="VBox/Buttons2"]
+margin_left = 766.0
+margin_right = 934.0
+margin_bottom = 30.0
 size_flags_horizontal = 3
 text = "Hit/Punch"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Jump" type="Button" parent="Buttons2"]
-margin_left = 917.0
-margin_right = 1096.0
-margin_bottom = 42.0
+[node name="Jump" type="Button" parent="VBox/Buttons2"]
+margin_left = 938.0
+margin_right = 1107.0
+margin_bottom = 30.0
 size_flags_horizontal = 3
 text = "Jump"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Blip" type="Button" parent="Buttons2"]
-margin_left = 1100.0
+[node name="Blip" type="Button" parent="VBox/Buttons2"]
+margin_left = 1111.0
 margin_right = 1280.0
-margin_bottom = 42.0
+margin_bottom = 30.0
 size_flags_horizontal = 3
 text = "Blip"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Scroll" type="ScrollContainer" parent="."]
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_top = 42.0
-margin_bottom = -48.0
+[node name="Buttons" type="HBoxContainer" parent="VBox"]
+margin_top = 34.0
+margin_right = 1280.0
+margin_bottom = 64.0
+rect_min_size = Vector2( 0, 30 )
+
+[node name="Label2" type="Label" parent="VBox/Buttons"]
+margin_top = 8.0
+margin_right = 73.0
+margin_bottom = 22.0
+text = "  Controls:  "
+
+[node name="Regen" type="Button" parent="VBox/Buttons"]
+margin_left = 77.0
+margin_right = 676.0
+margin_bottom = 30.0
+size_flags_horizontal = 3
+text = "Regenerate & Play"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Save" type="Button" parent="VBox/Buttons"]
+margin_left = 680.0
+margin_right = 1280.0
+margin_bottom = 30.0
+size_flags_horizontal = 3
+text = "Save Output"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Scroll" type="ScrollContainer" parent="VBox"]
+margin_top = 68.0
+margin_right = 1280.0
+margin_bottom = 720.0
 mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 scroll_vertical_enabled = false
 
-[node name="Box" type="HBoxContainer" parent="Scroll"]
+[node name="Box" type="HBoxContainer" parent="VBox/Scroll"]
 margin_right = 1280.0
-margin_bottom = 630.0
+margin_bottom = 652.0
 rect_min_size = Vector2( 1200, 0 )
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="Label" type="RichTextLabel" parent="Scroll/Box"]
+[node name="Label" type="RichTextLabel" parent="VBox/Scroll/Box"]
 margin_right = 252.0
-margin_bottom = 630.0
+margin_bottom = 652.0
 size_flags_horizontal = 3
 text = "- yes, this is slow. gdscript is slow. be patient. use a low time limit until you have the kind of sound you want. (note: will lock up while generating long sounds. normal.)
 
@@ -148,17 +193,17 @@ TODO:
 - hybridize/random buttons like sfxr
 - way to save/load json"
 
-[node name="D" type="Panel" parent="Scroll/Box"]
+[node name="D" type="Panel" parent="VBox/Scroll/Box"]
 margin_left = 256.0
 margin_right = 509.0
-margin_bottom = 630.0
+margin_bottom = 652.0
 size_flags_horizontal = 3
 custom_styles/panel = SubResource( 2 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Scroller" type="ScrollContainer" parent="Scroll/Box/D"]
+[node name="Scroller" type="ScrollContainer" parent="VBox/Scroll/Box/D"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 11.0
@@ -168,7 +213,7 @@ margin_bottom = -12.0
 mouse_filter = 2
 custom_styles/bg = SubResource( 1 )
 
-[node name="Controls" type="VBoxContainer" parent="Scroll/Box/D/Scroller"]
+[node name="Controls" type="VBoxContainer" parent="VBox/Scroll/Box/D/Scroller"]
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 224.0
@@ -179,13 +224,13 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label" type="Label" parent="Scroll/Box/D/Scroller/Controls"]
+[node name="Label" type="Label" parent="VBox/Scroll/Box/D/Scroller/Controls"]
 margin_right = 217.0
 margin_bottom = 14.0
 text = "FILTERS"
 align = 1
 
-[node name="HSeparator" type="HSeparator" parent="Scroll/Box/D/Scroller/Controls"]
+[node name="HSeparator" type="HSeparator" parent="VBox/Scroll/Box/D/Scroller/Controls"]
 margin_top = 17.0
 margin_right = 217.0
 margin_bottom = 21.0
@@ -193,17 +238,17 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="C" type="Panel" parent="Scroll/Box"]
+[node name="C" type="Panel" parent="VBox/Scroll/Box"]
 margin_left = 513.0
 margin_right = 766.0
-margin_bottom = 630.0
+margin_bottom = 652.0
 size_flags_horizontal = 3
 custom_styles/panel = SubResource( 2 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Scroller" type="ScrollContainer" parent="Scroll/Box/C"]
+[node name="Scroller" type="ScrollContainer" parent="VBox/Scroll/Box/C"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 11.0
@@ -213,7 +258,7 @@ margin_bottom = -12.0
 mouse_filter = 2
 custom_styles/bg = SubResource( 1 )
 
-[node name="Controls" type="VBoxContainer" parent="Scroll/Box/C/Scroller"]
+[node name="Controls" type="VBoxContainer" parent="VBox/Scroll/Box/C/Scroller"]
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 224.0
@@ -224,13 +269,13 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label" type="Label" parent="Scroll/Box/C/Scroller/Controls"]
+[node name="Label" type="Label" parent="VBox/Scroll/Box/C/Scroller/Controls"]
 margin_right = 217.0
 margin_bottom = 14.0
 text = "ENVELOPE"
 align = 1
 
-[node name="HSeparator" type="HSeparator" parent="Scroll/Box/C/Scroller/Controls"]
+[node name="HSeparator" type="HSeparator" parent="VBox/Scroll/Box/C/Scroller/Controls"]
 margin_top = 17.0
 margin_right = 217.0
 margin_bottom = 21.0
@@ -238,17 +283,17 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="B" type="Panel" parent="Scroll/Box"]
+[node name="B" type="Panel" parent="VBox/Scroll/Box"]
 margin_left = 770.0
 margin_right = 1023.0
-margin_bottom = 630.0
+margin_bottom = 652.0
 size_flags_horizontal = 3
 custom_styles/panel = SubResource( 2 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Scroller" type="ScrollContainer" parent="Scroll/Box/B"]
+[node name="Scroller" type="ScrollContainer" parent="VBox/Scroll/Box/B"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 11.0
@@ -258,7 +303,7 @@ margin_bottom = -12.0
 mouse_filter = 2
 custom_styles/bg = SubResource( 1 )
 
-[node name="Controls" type="VBoxContainer" parent="Scroll/Box/B/Scroller"]
+[node name="Controls" type="VBoxContainer" parent="VBox/Scroll/Box/B/Scroller"]
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 224.0
@@ -269,13 +314,13 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label" type="Label" parent="Scroll/Box/B/Scroller/Controls"]
+[node name="Label" type="Label" parent="VBox/Scroll/Box/B/Scroller/Controls"]
 margin_right = 217.0
 margin_bottom = 14.0
 text = "MODULATION"
 align = 1
 
-[node name="HSeparator" type="HSeparator" parent="Scroll/Box/B/Scroller/Controls"]
+[node name="HSeparator" type="HSeparator" parent="VBox/Scroll/Box/B/Scroller/Controls"]
 margin_top = 17.0
 margin_right = 217.0
 margin_bottom = 21.0
@@ -283,14 +328,14 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="A" type="Panel" parent="Scroll/Box"]
+[node name="A" type="Panel" parent="VBox/Scroll/Box"]
 margin_left = 1027.0
 margin_right = 1280.0
-margin_bottom = 630.0
+margin_bottom = 652.0
 size_flags_horizontal = 3
 custom_styles/panel = SubResource( 2 )
 
-[node name="Scroller" type="ScrollContainer" parent="Scroll/Box/A"]
+[node name="Scroller" type="ScrollContainer" parent="VBox/Scroll/Box/A"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 12.0
@@ -300,7 +345,7 @@ margin_bottom = -12.0
 mouse_filter = 2
 custom_styles/bg = SubResource( 1 )
 
-[node name="Controls" type="VBoxContainer" parent="Scroll/Box/A/Scroller"]
+[node name="Controls" type="VBoxContainer" parent="VBox/Scroll/Box/A/Scroller"]
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 222.0
@@ -311,41 +356,16 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label" type="Label" parent="Scroll/Box/A/Scroller/Controls"]
+[node name="Label" type="Label" parent="VBox/Scroll/Box/A/Scroller/Controls"]
 margin_right = 215.0
 margin_bottom = 14.0
 text = "EMITTERS"
 align = 1
 
-[node name="HSeparator" type="HSeparator" parent="Scroll/Box/A/Scroller/Controls"]
+[node name="HSeparator" type="HSeparator" parent="VBox/Scroll/Box/A/Scroller/Controls"]
 margin_top = 17.0
 margin_right = 215.0
 margin_bottom = 21.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Buttons" type="HBoxContainer" parent="."]
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_top = -48.0
-
-[node name="Regen" type="Button" parent="Buttons"]
-margin_right = 638.0
-margin_bottom = 48.0
-size_flags_horizontal = 3
-text = "Regenerate & Play"
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Save" type="Button" parent="Buttons"]
-margin_left = 642.0
-margin_right = 1280.0
-margin_bottom = 48.0
-size_flags_horizontal = 3
-text = "Save Output"
 __meta__ = {
 "_edit_use_anchors_": false
 }
