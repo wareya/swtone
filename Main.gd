@@ -10,13 +10,16 @@ class Filter extends Reference:
         pass
 
 class Delay extends Filter:
-    var wet = []
     var wet_amount = 0.25
     var dry_amount = 1.0
-    var dry = Vector2.ZERO
     var decay = 0.2
-    var cursor = 0
     var stereo_offset = -0.01
+    var diffusion = 8
+    var diffusion_ratio = 1.0
+    
+    var wet = []
+    var dry = Vector2.ZERO
+    var cursor = 0
     func _init(sample_rate, time, decay).(sample_rate):
         self.decay = decay
         wet = []
@@ -27,17 +30,79 @@ class Delay extends Filter:
         wet[cursor] += x
         dry = x
         cursor = (cursor + 1) % wet.size()
-    func pop_sample():
-        var _wet = wet[cursor]
+    
+    func sample(c):
+        return wet[(int(c) % wet.size() + wet.size() ) % wet.size()]
+    
+    func pull_from_cursor(c):
+        var _wet = sample(c)
+        var offset = floor(abs(stereo_offset * wet.size()))
+        if diffusion > 0:
+            offset = floor(offset / (diffusion + 1.0))
         if stereo_offset > 0.0:
-            var c2 = int(cursor+stereo_offset*sample_rate)
-            c2 = c2 % wet.size()
-            _wet.y = wet[c2].y
+            _wet.y = sample(c+offset).y
         elif stereo_offset < 0.0:
-            var c2 = int(cursor-stereo_offset*sample_rate)
-            c2 = c2 % wet.size()
-            _wet.x = wet[c2].x
-        return dry * dry_amount + _wet * wet_amount
+            _wet.x = sample(c+offset).x
+        return _wet
+        
+    func pop_sample():
+        if diffusion == 0:
+            return dry * dry_amount + pull_from_cursor(cursor) * wet_amount
+        else:
+            var _wet = Vector2()
+            for i in range(diffusion+1):
+                var d = float(i)/(diffusion+1)
+                seed(i ^ hash(wet.size() ^ 588123))
+                d += rand_range(-0.5, 0.5)/(diffusion+1)
+                d *= diffusion_ratio
+                d = int(d*wet.size())
+                _wet += pull_from_cursor(cursor + d)
+            _wet /= diffusion+1
+            return dry*dry_amount + _wet*wet_amount
+
+class Reverb extends Filter:
+    var dry_amount = 1.0
+    var wet_amount = 1.0
+    var decay = 0.5
+    
+    var delay1 : Delay
+    var delay2 : Delay
+    var delay3 : Delay
+    var lowpass : Lowpass
+    var dry = Vector2()
+    func _init(sample_rate, _decay).(sample_rate):
+        var decay = _decay
+        delay1 = Delay.new(sample_rate, 0.19, decay)
+        delay1.wet_amount = 1.0
+        delay1.dry_amount = 1.0/8.0
+        delay1.diffusion = 8
+        delay1.diffusion_ratio = 1.0
+        
+        delay2 = Delay.new(sample_rate, 0.14, 0.0)
+        delay2.wet_amount = 1.0
+        delay2.dry_amount = 1.0/8.0
+        delay2.diffusion = 8
+        delay2.stereo_offset = 0.02
+        delay2.diffusion_ratio = 1.0
+        
+        delay3 = Delay.new(sample_rate, 0.031, 0.0)
+        delay3.wet_amount = 1.0
+        delay3.dry_amount = 1.0/8.0
+        delay3.diffusion = 8
+        delay2.stereo_offset = 0.5
+        delay3.diffusion_ratio = 1.0
+        
+        lowpass = Lowpass.new(sample_rate, 2000.0)
+        
+    func push_sample(x):
+        dry = x
+    
+    func pop_sample():
+        delay1.push_sample(dry)
+        delay2.push_sample(delay1.pop_sample())
+        delay3.push_sample(delay2.pop_sample())
+        lowpass.push_sample(delay3.pop_sample())
+        return dry * dry_amount + lowpass.pop_sample() * wet_amount * 8.0
 
 class Lowpass extends Filter:
     var cutoff = 0.0
@@ -403,14 +468,13 @@ class Generator extends Reference:
         var dc_bias = (width - 0.5) * 2
         last_sq_cursor = x
         return out + dc_bias
-            
     
     var last_saw_cursor = 0.0
     func _saw(cursor, exponent = 1.0):
         var n = fmod(cursor, 2.0)-1.0
         var out = pow(abs(n), exponent)*sign(n)
         # FIXME make work properly when cursor is moving "backwards"
-        if n < last_saw_cursor:
+        if n < last_saw_cursor and (last_saw_cursor - n) >= 1.0:
             out = lerp(-1.0, 1.0, inverse_lerp(last_saw_cursor, n + 2.0, 1.0))
         last_saw_cursor = n
         return out
@@ -510,6 +574,10 @@ class Generator extends Reference:
             delay.push_sample(samples[c])
             samples[c] = delay.pop_sample()
         
+        if reverb_wet_amount != 0.0 or reverb_dry_amount != 1.0:
+            reverb.push_sample(samples[c])
+            samples[c] = reverb.pop_sample()
+        
         if lowpass_frequency < 22050.0:
             lowpass.push_sample(samples[c])
             samples[c] = lowpass.pop_sample()
@@ -540,11 +608,19 @@ class Generator extends Reference:
     
     var delay_time = 0.25
     var delay_decay = 0.2
-    var delay_stereo_offset = -0.005
+    var delay_stereo_offset = -0.02
     var delay_wet_amount = 0.0
     var delay_dry_amount = 1.0
+    var delay_diffusion = 0
+    var delay_diffusion_ratio = 0.5
     
     var delay = Delay.new(sample_rate, delay_time, delay_decay)
+    
+    
+    var reverb_dry_amount = 1.0
+    var reverb_wet_amount = 0.0
+    var reverb_decay = 0.5
+    var reverb = Reverb.new(sample_rate, reverb_decay)
     
     var lowpass_frequency = 22050.0
     var lowpass = Lowpass.new(sample_rate, lowpass_frequency)
@@ -598,7 +674,7 @@ class Generator extends Reference:
         restart()
         
         var aa = oversampling
-        var break_limit = 0.05
+        var break_limit = 0.2
         var silence_count = 0
         var silence_limit = 1.0/32768.0
         
@@ -749,6 +825,12 @@ class Generator extends Reference:
         delay.stereo_offset = delay_stereo_offset
         delay.wet_amount = delay_wet_amount
         delay.dry_amount = delay_dry_amount
+        delay.diffusion = delay_diffusion
+        delay.diffusion_ratio = delay_diffusion_ratio
+        
+        reverb = Reverb.new(sample_rate, reverb_decay)
+        reverb.wet_amount = reverb_wet_amount
+        reverb.dry_amount = reverb_dry_amount
         
         lowpass = Lowpass.new(sample_rate, lowpass_frequency)
         highpass = Highpass.new(sample_rate, highpass_frequency)
@@ -1031,6 +1113,12 @@ func add_controls():
     add_slider("delay_stereo_offset", -1.0, 1.0).step = 0.001
     add_slider("delay_wet_amount", -1.0, 1.0)
     add_slider("delay_dry_amount", -1.0, 1.0)
+    add_slider("delay_diffusion", 0.0, 8.0).step = 1
+    add_slider("delay_diffusion_ratio", 0.0, 1.0)
+    add_separator()
+    add_slider("reverb_decay", 0.0, 0.9)
+    add_slider("reverb_wet_amount", -8.0, 8.0)
+    add_slider("reverb_dry_amount", -1.0, 1.0)
     add_separator()
     add_slider("lowpass_frequency", 20.0, 22050.0).exp_edit = true
     add_separator()
