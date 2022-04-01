@@ -453,7 +453,7 @@ class Generator extends Reference:
             return floor(x*stages)/stages + 1.0/stages/2.0
     
     var last_sq_cursor = gen_cursor
-    func _square(cursor, width = 0.5):
+    func _square(cursor, width = 0.5, nooffset = false):
         var x = fmod(cursor, 2.0)/2.0
         var out = -1.0 if x < width else 1.0
         
@@ -466,6 +466,8 @@ class Generator extends Reference:
             out = lerp(1.0, -1.0, between)
         
         var dc_bias = (width - 0.5) * 2
+        if nooffset:
+            dc_bias = 0.0
         last_sq_cursor = x
         return out + dc_bias
     
@@ -570,13 +572,17 @@ class Generator extends Reference:
     func update_filters():
         var c = samples.size()-1
         
-        if delay_wet_amount != 0.0 or delay_dry_amount != 1.0:
+        if delay_wet_amount != 0.0:
             delay.push_sample(samples[c])
             samples[c] = delay.pop_sample()
+        elif delay_dry_amount != 1.0:
+            samples[c] *= delay_dry_amount
         
-        if reverb_wet_amount != 0.0 or reverb_dry_amount != 1.0:
+        if reverb_wet_amount != 0.0:
             reverb.push_sample(samples[c])
             samples[c] = reverb.pop_sample()
+        elif reverb_dry_amount != 1.0:
+            samples[c] *= reverb_dry_amount
         
         if lowpass_frequency < 22050.0:
             lowpass.push_sample(samples[c])
@@ -590,13 +596,17 @@ class Generator extends Reference:
             ringmod.push_sample(samples[c])
             samples[c] = ringmod.pop_sample()
         
-        if flanger_wet_amount != 0.0 or flanger_dry_amount != 1.0:
+        if flanger_wet_amount != 0.0:
             flanger.push_sample(samples[c])
             samples[c] = flanger.pop_sample()
+        elif flanger_dry_amount != 1.0:
+            samples[c] *= flanger_dry_amount
         
-        if (chorus_wet_amount != 0.0 and chorus_voices > 0) or chorus_dry_amount != 1.0:
+        if (chorus_wet_amount != 0.0 and chorus_voices > 0):
             chorus.push_sample(samples[c])
             samples[c] = chorus.pop_sample()
+        elif chorus_dry_amount != 1.0:
+            samples[c] *= chorus_dry_amount
         
         if waveshaper.mix != 0.0:
             waveshaper.push_sample(samples[c])
@@ -628,7 +638,7 @@ class Generator extends Reference:
     var highpass_frequency = 20.0
     var highpass = Highpass.new(sample_rate, highpass_frequency)
     
-    var ringmod_frequency = 0.01
+    var ringmod_frequency = 0.25
     var ringmod_phase = 0.0
     var ringmod_amount = 0.0
     var ringmod = Ringmod.new(sample_rate, ringmod_frequency, ringmod_phase, ringmod_amount)
@@ -666,7 +676,11 @@ class Generator extends Reference:
     
     var waveshaper = Waveshaper.new(sample_rate, waveshaper_pre_gain, waveshaper_exponent, waveshaper_clip, waveshaper_clip_mode, waveshaper_quantization, waveshaper_mix)
     
+    
+    var gen_nonce = 0
     func generate():
+        gen_nonce += 1
+        var self_nonce = gen_nonce
         parent.find_node("Regen").disabled = true
         #pcm_source = make_pcm_source(preload("res://tambourine.wav"))
         #pcm_source = make_pcm_source(preload("res://paper bag.wav"))
@@ -682,6 +696,8 @@ class Generator extends Reference:
         for _i in range(sample_rate*time_limit):
             if abs(OS.get_ticks_msec() - start_time) > 10:
                 yield(parent.get_tree(), "idle_frame")
+                if gen_nonce != self_nonce:
+                    return
                 start_time = OS.get_ticks_msec()
             update_envelope(gen_time)
             var old_time = gen_time
@@ -735,12 +751,14 @@ class Generator extends Reference:
     var freq_sweep_rate = 0.0 # semitones per second
     var freq_sweep_delta = 0.0 # semitones per second per second
     
+    ## FIXME: AHR volume isn't implemented correctly
+    # (note to self: use points 0, 1/2, and 3, not 123 or 234)
     var attack = 0.0
     var attack_exponent = 1.0
     var attack_volume = 1.0
-    var hold = 0.5
+    var hold = 0.2
     var hold_volume = 1.0
-    var release = 1.0
+    var release = 0.8
     var release_exponent = 4.0
     var release_volume = 1.0
     
@@ -789,11 +807,11 @@ class Generator extends Reference:
             elif freq_lfo_shape == 1.0:
                 freq_offset_lfo = _square(t)
             elif freq_lfo_shape == 2.0:
-                freq_offset_lfo = _square(t, 0.25)
+                freq_offset_lfo = _square(t, 0.25, true)
             elif freq_lfo_shape == 3.0:
                 freq_offset_lfo = _saw(t)
             elif freq_lfo_shape == 4.0:
-                freq_offset_lfo = _saw(t, 2)
+                freq_offset_lfo = _saw(t, 3)
             elif freq_lfo_shape == 5.0:
                 if int(pcm_source) == 0:
                     freq_offset_lfo = _pcm(t / pcm_rate)
@@ -883,9 +901,9 @@ func randomize_value(key, _range : Array):
     if !slider.exp_edit or slider.min_value <= 0.0:
         slider.value = rand_range(_range[0], _range[1])
     else:
-        # FIXME make logarithmic
-        _range[0] = max(0.1, _range[0])
-        _range[1] = max(0.1, _range[1])
+        var step = max(0.001, slider.step)
+        _range[0] = max(step, _range[0])
+        _range[1] = max(step, _range[1])
         slider.value = exp(rand_range(log(_range[0]), log(_range[1])))
 
 func reset_all_values():
@@ -901,6 +919,10 @@ func random_choice(array : Array):
 func random_pickup():
     seed(OS.get_ticks_usec() ^ hash("awfiei"))
     reset_all_values()
+    set_value("square_volume", 0.0)
+    
+    var which = random_choice(["square", "tri"])
+    set_value("%s_volume" % which, 1.0)
     
     randomize_value("freq", [400.0, 2400.0])
     randomize_value("hold", [0.0, 0.1])
@@ -933,7 +955,7 @@ func random_laser():
     
     generator.generate()
 
-func random_explosion():
+func random_explosion(no_delay = false):
     seed(OS.get_ticks_usec() ^ hash("awfiei"))
     reset_all_values()
     set_value("square_volume", 0.0)
@@ -955,13 +977,101 @@ func random_explosion():
         randomize_value("ringmod_frequency", [1.0, 4.0])
         randomize_value("ringmod_amount", [0.5, 1.0])
     
+    if !no_delay and randi() % 3 == 0:
+        randomize_value("delay_time", [0.2, 0.4])
+        randomize_value("delay_wet_amount", [0.1, 0.4])
+        randomize_value("delay_diffusion", [0.0, 4.0])
+        set_value("delay_decay", 0.0)
+        
     set_value("pcm_volume", 1.0)
-    randomize_value("pcm_noise_cycle", [256, 65536])
+    randomize_value("pcm_noise_cycle", [32.0, 65536])
     
     #set_value("highpass_frequency", 100)
     
     generator.generate()
+
+func random_powerup():
+    seed(OS.get_ticks_usec() ^ hash("awfiei"))
+    reset_all_values()
+    set_value("square_volume", 0.0)
     
+    var which = random_choice(["square", "tri"])
+    set_value("%s_volume" % which, 1.0)
+    
+    randomize_value("freq", [200.0, 2400.0])
+    randomize_value("attack", [0.0, 0.02])
+    randomize_value("hold", [0.3, 0.5])
+    randomize_value("release", [0.5, 1.0])
+    
+    var slide_type = randi() % 3
+    if slide_type == 0:
+        randomize_value("step_time", [0.02, 0.05])
+        randomize_value("step_semitones", [1.0, 7.0])
+        set_value("step_semitones_stagger", 0.0)
+        set_value("step_retrigger", 1.0)
+        randomize_value("step_loop", [3.0, 6.0])
+    elif slide_type == 1:
+        randomize_value("freq_sweep_rate", [7.0, 128.0])
+    else:
+        randomize_value("freq_lfo_rate", [3.0, 20.0])
+        randomize_value("freq_lfo_strength", [6.0, 24.0])
+        set_value("freq_lfo_shape", 3)
+        
+    if slide_type != 2 and randi() % 2:
+        randomize_value("freq_lfo_rate", [3.0, 6.0])
+        randomize_value("freq_lfo_strength", [0.2, 2.0])
+        
+    if randi() % 4:
+        set_value("delay_wet_amount", 0.2)
+    if randi() % 4:
+        set_value("chorus_wet_amount", 0.2)
+    
+    generator.generate()
+
+func random_jump():
+    seed(OS.get_ticks_usec() ^ 4136436345)
+    reset_all_values()
+    
+    randomize_value("square_width", [0.5, 0.8])
+    
+    randomize_value("freq", [50.0, 400.0])
+    randomize_value("hold", [0.1, 0.5])
+    randomize_value("release", [0.1, 0.2])
+    
+    randomize_value("freq_sweep_rate", [15.0, 128.0])
+    
+    generator.generate()
+
+func random_hit():
+    seed(OS.get_ticks_usec() ^ 4136436345)
+    if randi() % 4 == 0:
+        random_explosion(true)
+    else:
+        random_laser()
+    
+    randomize_value("freq", [40.0, 800.0])
+    randomize_value("hold", [0.05, 0.10])
+    randomize_value("release", [0.15, 0.25])
+    randomize_value("freq_sweep_rate", [-128.0, -512.0])
+
+func random_blip():
+    seed(OS.get_ticks_usec() ^ hash("awfiei"))
+    reset_all_values()
+    set_value("square_volume", 0.0)
+    
+    var which = random_choice(["square", "tri", "sin"])
+    set_value("%s_volume" % which, 1.0)
+    
+    randomize_value("freq", [200.0, 2400.0])
+    randomize_value("hold", [0.1, 0.2])
+    randomize_value("release", [0.01, 0.05])
+    
+    if randi() % 2 == 0:
+        randomize_value("step_time", [0.02, 0.085])
+        randomize_value("step_semitones", [-1.0, -24.0])
+        set_value("step_retrigger", 0)
+    
+    generator.generate()
 
 onready var control_target : Node = $Scroll/Box/A/Scroller/Controls
 
@@ -1248,6 +1358,10 @@ func _ready():
     _unused = $Buttons2/Pickup.connect("pressed", self, "random_pickup")
     _unused = $Buttons2/Laser.connect("pressed", self, "random_laser")
     _unused = $Buttons2/Explosion.connect("pressed", self, "random_explosion")
+    _unused = $Buttons2/Powerup.connect("pressed", self, "random_powerup")
+    _unused = $Buttons2/Hit.connect("pressed", self, "random_hit")
+    _unused = $Buttons2/Jump.connect("pressed", self, "random_jump")
+    _unused = $Buttons2/Blip.connect("pressed", self, "random_blip")
     
     yield(get_tree().create_timer(generator.samples.size() / generator.sample_rate + 0.25), "timeout")
     yield(get_tree(), "idle_frame")

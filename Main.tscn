@@ -40,7 +40,7 @@ anchor_right = 1.0
 margin_bottom = 42.0
 
 [node name="Pickup" type="Button" parent="Buttons2"]
-margin_right = 424.0
+margin_right = 179.0
 margin_bottom = 42.0
 size_flags_horizontal = 3
 text = "Pickup/Coin"
@@ -49,8 +49,8 @@ __meta__ = {
 }
 
 [node name="Laser" type="Button" parent="Buttons2"]
-margin_left = 428.0
-margin_right = 852.0
+margin_left = 183.0
+margin_right = 362.0
 margin_bottom = 42.0
 size_flags_horizontal = 3
 text = "Laser/Hurt"
@@ -59,11 +59,51 @@ __meta__ = {
 }
 
 [node name="Explosion" type="Button" parent="Buttons2"]
-margin_left = 856.0
-margin_right = 1280.0
+margin_left = 366.0
+margin_right = 546.0
 margin_bottom = 42.0
 size_flags_horizontal = 3
 text = "Explosion"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Powerup" type="Button" parent="Buttons2"]
+margin_left = 550.0
+margin_right = 729.0
+margin_bottom = 42.0
+size_flags_horizontal = 3
+text = "Powerup"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Hit" type="Button" parent="Buttons2"]
+margin_left = 733.0
+margin_right = 913.0
+margin_bottom = 42.0
+size_flags_horizontal = 3
+text = "Hit/Punch"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Jump" type="Button" parent="Buttons2"]
+margin_left = 917.0
+margin_right = 1096.0
+margin_bottom = 42.0
+size_flags_horizontal = 3
+text = "Jump"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Blip" type="Button" parent="Buttons2"]
+margin_left = 1100.0
+margin_right = 1280.0
+margin_bottom = 42.0
+size_flags_horizontal = 3
+text = "Blip"
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -97,15 +137,15 @@ text = "- yes, this is slow. gdscript is slow. be patient. use a low time limit 
 
 - set freq to 22050 and pcm rate to 1.0 to play sounds back at original frequency
 
-- press \"save output\" button to save to a file. on desktop this writes directly to:
+- press \"save output\"  to save a wav file
+on desktop this writes directly to:
 sxr_output/sxr_timestamp.wav
 and on html it opens a file save dialogue
 
 TODO:
-
 - modulation for effects where it makes sense
 - more built-in pcm samples
-- random/hybrid buttons (with categories) like sfxr
+- hybridize/random buttons like sfxr
 - way to save/load json"
 
 [node name="D" type="Panel" parent="Scroll/Box"]
