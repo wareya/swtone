@@ -811,7 +811,15 @@ public class Main : Control
             else if((int)(pcm_source) == pcm_sources.Count+1)
             {
                 var source = pcm_source_custom;
+                if(source == null)
+                {
+                    return Vector2.Zero;
+                }
                 var size = source.Count;
+                if(size == 0)
+                {
+                    return Vector2.Zero;
+                }
                 if(pcm_cutoff > 0.0f)
                 {
                     size = Mathf.Min(size, (int)(pcm_cutoff * sample_rate));
@@ -1786,7 +1794,7 @@ public class Main : Control
         }
         generator.pcm_source_custom = Generator.MakePcmSource(stream as AudioStreamSample);
         generator.pcm_source = generator.pcm_sources.Count+1;
-        var player = GetNode("Scroll/Box/ScrollerA/Controls").FindNode("pcm_source", true, false) as Slider;
+        var player = GetNode("VBox/Scroll/Box/A/Scroller/Controls").FindNode("pcm_source", true, false) as Slider;
         player.Value = generator.pcm_source;
     }
     
@@ -1880,7 +1888,7 @@ public class Main : Control
         scrollbar.AddIconOverride("increment_pressed", GD.Load("res://rightclick.png") as Texture);
         scrollbar.CustomStep = 128;
         
-        var _unused = GetTree().Connect("files_dropped", this, "_on_files_dropped");
+        var _unused = GetTree().Connect("files_dropped", this, "_OnFilesDropped");
         
         generator = new Generator();
         generator.parent = this;
