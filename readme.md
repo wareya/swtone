@@ -1,5 +1,9 @@
 # swtone
 
+download: https://wareya.itch.io/swtone (or under Releases)
+
+on the web: https://wareya.itch.io/swtone-html5
+
 ![image](https://user-images.githubusercontent.com/585488/160532286-7f531568-b4b7-4e22-a387-ac0323ca31c6.png)
 
 incomplete sfxr-inspired sound effects tool
