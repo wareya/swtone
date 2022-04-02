@@ -689,38 +689,47 @@ public class Main : Control
             var output = x < width ? -1.0f : 1.0f;
             
             // FIXME make this work even when the cursor is cycling "backwards"
-            if(last_sq_cursor < width && x >= width)
+            if(!nooffset)
             {
-                var between = Mathf.InverseLerp(x, last_sq_cursor, width);
-                output = Mathf.Lerp(-1.0f, 1.0f, between);
-            }
-            else if(x < last_sq_cursor)
-            {
-                var between = Mathf.InverseLerp(x + 1.0f, last_sq_cursor, 1.0f);
-                output = Mathf.Lerp(1.0f, -1.0f, between);
-            
+                if(last_sq_cursor < width && x >= width)
+                {
+                    var between = Mathf.InverseLerp(x, last_sq_cursor, width);
+                    output = Mathf.Lerp(-1.0f, 1.0f, between);
+                }
+                else if(x < last_sq_cursor)
+                {
+                    var between = Mathf.InverseLerp(x + 1.0f, last_sq_cursor, 1.0f);
+                    output = Mathf.Lerp(1.0f, -1.0f, between);
+                
+                }
             }
             var dc_bias = (width - 0.5f) * 2.0f;
             if(nooffset)
             {
                 dc_bias = 0.0f;
             }
-            last_sq_cursor = x;
+            if(!nooffset)
+            {
+                last_sq_cursor = x;
+            }
             return output + dc_bias;
         
         }
     
         public float last_saw_cursor = 0.0f;
-        public float _Saw(float cursor, float exponent = 1.0f)
+        public float _Saw(float cursor, float exponent = 1.0f, bool no_magic = false)
         {
             var n = Mathf.PosMod(cursor, 2.0f)-1.0f;
             var output = Mathf.Pow(Mathf.Abs(n), exponent)*Mathf.Sign(n);
             // FIXME make work properly when cursor is moving "backwards"
-            if(n < last_saw_cursor && (last_saw_cursor - n) >= 1.0f)
+            if(!no_magic)
             {
-                output = Mathf.Lerp(-1.0f, 1.0f, Mathf.InverseLerp(last_saw_cursor, n + 2.0f, 1.0f));
+                if(n < last_saw_cursor && (last_saw_cursor - n) >= 1.0f)
+                {
+                    output = Mathf.Lerp(-1.0f, 1.0f, Mathf.InverseLerp(last_saw_cursor, n + 2.0f, 1.0f));
+                }
+                last_saw_cursor = n;
             }
-            last_saw_cursor = n;
             return output;
         
         }
@@ -1164,7 +1173,7 @@ public class Main : Control
                 }
                 else if(freq_lfo_shape == 1.0f)
                 {
-                    freq_offset_lfo = _Square(t);
+                    freq_offset_lfo = _Square(t, 0.5f, true);
                 }
                 else if(freq_lfo_shape == 2.0f)
                 {
@@ -1172,11 +1181,11 @@ public class Main : Control
                 }
                 else if(freq_lfo_shape == 3.0f)
                 {
-                    freq_offset_lfo = _Saw(t);
+                    freq_offset_lfo = _Saw(t, 1.0f, true);
                 }
                 else if(freq_lfo_shape == 4.0f)
                 {
-                    freq_offset_lfo = _Saw(t, 3.0f);
+                    freq_offset_lfo = _Saw(t, 3.0f, true);
                 }
                 else if(freq_lfo_shape == 5.0f)
                 {
