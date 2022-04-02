@@ -1802,11 +1802,8 @@ public class Main : Control
     public String fname_bare;
     public void Save()
     {  
-        var dir = new Directory();
-        dir.MakeDir("sfx_output");
-        
         var timestamp = OS.GetSystemTimeMsecs();
-        fname = $"sfx_output/sfx_{timestamp}.wav";
+        fname = $"sfx_{timestamp}.wav";
         fname_bare = $"sfx_{timestamp}.wav";
         var bytes = new StreamPeerBuffer();
         foreach(Vector2 vec in generator.samples)
@@ -1826,13 +1823,40 @@ public class Main : Control
         if(OS.GetName() == "HTML5")
         {
             fname = "user://" + fname_bare;
-        
+            audio.SaveToWav(fname);
+            var file = new File();
+            file.Open(fname, File.ModeFlags.Read);
+            JavaScript.DownloadBuffer(file.GetBuffer((long)file.GetLen()), fname_bare, "audio/wave");
+            file.Close();
         }
-        audio.SaveToWav(fname);
-        var file = new File();
-        file.Open(fname, File.ModeFlags.Read);
-        
-        JavaScript.DownloadBuffer(file.GetBuffer((long)file.GetLen()), fname_bare, "audio/wave");
+        else
+        {
+            var dir = new Directory();
+            var dir_text = "res://";
+            if(OS.HasFeature("standalone"))
+            {
+                GD.Print("standalone build");
+                GD.Print(OS.GetExecutablePath().GetBaseDir());
+                // broken, see https://github.com/godotengine/godot/issues/35346
+                //var yz = dir.ChangeDir(OS.GetExecutablePath().GetBaseDir());
+                //GD.Print(yz);
+                //GD.Print(dir.GetCurrentDir());
+                dir_text = OS.GetExecutablePath().GetBaseDir() + "/sfx_output";
+                var xz = dir.MakeDir(dir_text);
+                GD.Print(xz);
+                dir.ChangeDir("sfx_output");
+            }
+            else
+            {
+                dir.ChangeDir("sfx_output");
+            }
+            GD.Print(dir_text);
+            
+            fname = dir_text + "/" + fname_bare;
+            GD.Print(fname);
+            
+            audio.SaveToWav(fname);
+        }
     }
     
     public async void UpdatePlayer()
