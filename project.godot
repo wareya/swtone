@@ -58,12 +58,6 @@ wav={
 "force/mono": false
 }
 
-[mono]
-
-profiler/enabled=true
-export/aot/enabled=true
-export/aot/full_aot=true
-
 [physics]
 
 common/enable_pause_aware_picking=true

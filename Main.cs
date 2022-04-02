@@ -981,6 +981,7 @@ public class Main : Control
             gen_nonce += 1;
             var self_nonce = gen_nonce;
             (parent.FindNode("Regen") as Button).Disabled = true;
+            (parent.FindNode("Replay") as Button).Disabled = true;
             //pcm_source = MakePcmSource(GD.Load("res://tambourine.wav"));
             //pcm_source = MakePcmSource(GD.Load("res://paper bag.wav"));
             samples = new List<Vector2>();
@@ -1057,6 +1058,7 @@ public class Main : Control
                 }
             }
             (parent.FindNode("Regen") as Button).Disabled = false;
+            (parent.FindNode("Replay") as Button).Disabled = false;
             EmitSignal("generation_complete");
         
         }
@@ -1413,8 +1415,6 @@ public class Main : Control
         SetValue("pcm_volume", 1.0f);
         RandomizeValue("pcm_noise_cycle", 32.0f, 65536.0f);
         
-        //set_value("highpass_frequency", 100)
-        
         generator.Generate();
     }
     
@@ -1464,6 +1464,7 @@ public class Main : Control
         {
             SetValue("chorus_wet_amount", 0.2f);
         }
+        
         generator.Generate();
     }
     
@@ -1496,10 +1497,12 @@ public class Main : Control
         {
             RandomLaser();
         }
-        RandomizeValue("freq", 40.0f, 800.0f);
+        RandomizeValue("freq", 200.0f, 1600.0f);
         RandomizeValue("hold", 0.05f, 0.10f);
         RandomizeValue("release", 0.15f, 0.25f);
         RandomizeValue("freq_sweep_rate", -128.0f, -512.0f);
+        
+        generator.Generate();
     }
     
     public void RandomBlip()
@@ -1518,10 +1521,11 @@ public class Main : Control
         if(GD.Randi() % 2 == 0)
         {
             RandomizeValue("step_time", 0.02f, 0.085f);
-            RandomizeValue("step_semitones", -1.0f, -24.0f);
+            RandomizeValue("step_semitones", 24.0f, -24.0f);
             SetValue("step_retrigger", 0.0f);
         
         }
+        
         generator.Generate();
     }
     
@@ -1839,7 +1843,15 @@ public class Main : Control
         
         await ToSignal(GetTree(), "idle_frame");
         await ToSignal(GetTree(), "idle_frame");
+        await ToSignal(GetTree(), "idle_frame");
         
+        player.Play();
+    }
+    
+    public void Replay()
+    {
+        var player = GetNode("Player") as AudioStreamPlayer;
+        player.Stop();
         player.Play();
     }
     
@@ -1873,6 +1885,7 @@ public class Main : Control
         generator.Generate();
         
         _unused = GetNode("VBox/Buttons/Regen").Connect("pressed", generator, "Generate");
+        _unused = GetNode("VBox/Buttons/Replay").Connect("pressed", this, "Replay");
         _unused = GetNode("VBox/Buttons/Save").Connect("pressed", this, "Save");
         
         _unused = GetNode("VBox/Buttons2/Pickup").Connect("pressed", this, "RandomPickup");
